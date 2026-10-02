@@ -1,0 +1,216 @@
+/* Responsive breakpoints */
+
+@media (max-width: 1180px) {
+  .sidebar {
+    width: 220px;
+    flex-basis: 220px;
+  }
+  .dashboard,
+  .subpage {
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+  .topbar {
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+  .quick-card {
+    padding: 12px;
+    gap: 9px;
+  }
+  .quick-icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+  .quick-clock {
+    display: none;
+  }
+}
+
+@media (max-width: 950px) {
+  .planner-grid {
+    grid-template-columns: 1fr;
+  }
+  .fare-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .quick-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .quick-card.static {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    width: 260px;
+  }
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+  .mobile-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: #0912249c;
+    border: 0;
+  }
+  .mobile-menu {
+    display: grid;
+    place-items: center;
+    background: transparent;
+    border: 0;
+    padding: 4px;
+    color: #34485a;
+  }
+  .topbar {
+    height: 65px;
+    padding: 0 20px;
+  }
+  .dashboard,
+  .subpage {
+    padding: 24px 20px;
+  }
+  .welcome {
+    align-items: flex-start;
+    margin-bottom: 23px;
+  }
+  .welcome h1,
+  .page-heading h1 {
+    font-size: 26px;
+  }
+  .date-chip {
+    display: none;
+  }
+  .hero {
+    min-height: 274px;
+  }
+  .hero-copy {
+    padding: 26px;
+    max-width: 90%;
+  }
+  .hero h2 {
+    font-size: 30px;
+  }
+  .network-layout {
+    grid-template-columns: 1fr;
+  }
+  .network-aside {
+    position: static;
+  }
+  .quick-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .section-helper {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar-left {
+    gap: 9px;
+  }
+  .live-clock {
+    font-size: 10px;
+  }
+  .live-clock strong {
+    margin-right: 0;
+  }
+  .welcome h1 {
+    font-size: 24px;
+  }
+  .welcome p {
+    line-height: 1.8;
+  }
+  .hero-copy {
+    max-width: 100%;
+  }
+  .hero h2 {
+    font-size: 28px;
+  }
+  .hero p {
+    max-width: 250px;
+  }
+  .section-title-row {
+    margin-top: 28px;
+  }
+  .section-title-row h2 {
+    font-size: 17px;
+  }
+  .planner-card,
+  .result-card {
+    padding: 20px 17px;
+  }
+  .card-step {
+    display: none;
+  }
+  .quick-grid {
+    grid-template-columns: 1fr;
+  }
+  .quick-card.static {
+    display: flex;
+  }
+  .quick-clock {
+    display: block;
+  }
+  .main-footer {
+    flex-direction: column;
+  }
+  .network-card {
+    padding: 20px 18px;
+  }
+  .fare-grid {
+    gap: 9px;
+  }
+  .fare-card {
+    padding: 16px 12px;
+    min-height: 210px;
+  }
+  .fare-card h2 {
+    font-size: 11px;
+  }
+  .fare-value {
+    font-size: 28px;
+  }
+  .fare-value small {
+    display: block;
+  }
+  .ticket-cta {
+    padding: 20px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .interchange-label {
+    font-size: 8px;
+  }
+  .modal {
+    padding: 24px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate-doors i,
+  .gate-card {
+    transition: none;
+  }
+}
+
+@media (max-width: 950px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .network-layout {
+    grid-template-columns: 1fr;
+  }
+  .topbar-link {
+    display: none;
+  }
+}

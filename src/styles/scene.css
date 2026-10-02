@@ -1,0 +1,85 @@
+/* Hero illustration (MonorailScene) */
+
+.hero-scene {
+  position: absolute;
+  inset: 0 43% 0 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.hero-scene svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Fades the illustration into the hero background on the text side */
+.hero-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(23, 31, 62, 0.03), rgba(23, 31, 62, 0.14) 45%, var(--brand-deep) 98%);
+}
+
+.scene-sun {
+  fill: #f2c27b;
+  opacity: 0.85;
+}
+.scene-building {
+  fill: rgba(255, 255, 255, 0.08);
+}
+.scene-pillar {
+  fill: #7f98b8;
+}
+.scene-beam {
+  fill: #c9d9ea;
+}
+.scene-car {
+  fill: #f1f6fb;
+}
+.scene-stripe {
+  fill: #2f6fd6;
+}
+.scene-skirt {
+  fill: #a9bdd4;
+}
+.scene-window {
+  fill: #1a2b52;
+}
+
+.scene-train {
+  transform: translateX(120px);
+  animation: monorail-glide 16s linear infinite;
+}
+
+@keyframes monorail-glide {
+  from {
+    transform: translateX(-380px);
+  }
+  to {
+    transform: translateX(640px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-train {
+    animation: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .hero-scene {
+    inset: 0 48% 0 0;
+  }
+}
+@media (max-width: 950px) {
+  .hero-scene {
+    inset: 0 40% 0 0;
+  }
+}
+@media (max-width: 720px) {
+  .hero-scene {
+    inset: 0 35% 0 0;
+    opacity: 0.55;
+  }
+}

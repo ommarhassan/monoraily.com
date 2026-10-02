@@ -1,0 +1,41 @@
+/* Base: reset-ish defaults and design tokens */
+
+:root {
+  /* Design tokens: change these to re-theme the whole app */
+  --ink: #181e37;
+  --paper: #f7f8f5;
+  --brand: #192a4c;
+  --brand-deep: #171f3e;
+  --sidebar: #11142f;
+  --accent: #a8c8d6;
+}
+
+html {
+  font-family: 'Cairo', sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  font-synthesis: none;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+a {
+  color: inherit;
+}

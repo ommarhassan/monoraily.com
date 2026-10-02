@@ -1,0 +1,384 @@
+/* Inner pages: stations list, fares */
+
+.subpage {
+  min-height: calc(100vh - 77px);
+}
+
+.page-heading {
+  margin-bottom: 29px;
+}
+
+.page-heading h1 {
+  margin-bottom: 5px;
+}
+
+.network-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(240px, 0.8fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.network-card {
+  padding: 25px 30px;
+}
+
+.network-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ecf1f0;
+  padding-bottom: 19px;
+  margin-bottom: 21px;
+}
+
+.network-header h2 {
+  font-size: 20px;
+  margin: 2px 0 0;
+}
+
+.network-count {
+  background: #edf4f5;
+  color: #527080;
+  border-radius: 20px;
+  padding: 5px 13px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.network-branch + .network-branch {
+  border-top: 1px dashed #e2ebea;
+  padding-top: 21px;
+  margin-top: 10px;
+}
+
+.network-branch h3 {
+  font-size: 12px;
+  color: #536474;
+  margin: 0 0 13px;
+}
+
+.network-stations {
+  margin-right: 7px;
+}
+
+.network-station {
+  min-height: 42px;
+  border-right: 2px solid var(--line-color);
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0 17px 12px 0;
+  font-size: 11px;
+}
+
+.network-station:last-child {
+  border-right-color: transparent;
+  min-height: 26px;
+}
+
+.network-node {
+  width: 12px;
+  height: 12px;
+  position: absolute;
+  right: -7px;
+  top: 3px;
+  background: white;
+  border: 3px solid var(--line-color);
+  border-radius: 50%;
+}
+
+.network-node.interchange {
+  width: 16px;
+  height: 16px;
+  right: -9px;
+  top: 1px;
+  box-shadow: 0 0 0 3px #eef3f4;
+}
+
+.network-name {
+  font-weight: 800;
+  color: #364350;
+}
+
+.interchange-label,
+.terminal-label {
+  margin-right: auto;
+  color: #708691;
+  background: #eff6f6;
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.terminal-label {
+  color: #9ba8a8;
+  background: #f3f6f5;
+}
+
+.network-aside {
+  background: #1a2644;
+  border-radius: 15px;
+  color: white;
+  padding: 27px;
+  position: sticky;
+  top: 105px;
+  overflow: hidden;
+}
+
+.network-aside:after {
+  content: '';
+  width: 200px;
+  height: 200px;
+  border: 1px solid #ffffff12;
+  border-radius: 50%;
+  position: absolute;
+  left: -80px;
+  top: -90px;
+  box-shadow: 0 0 0 40px #ffffff06;
+}
+
+.aside-symbol {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #b4dbdf;
+  color: #20314c;
+  display: grid;
+  place-items: center;
+}
+
+.network-aside h3 {
+  font-size: 19px;
+  line-height: 1.6;
+  margin: 18px 0 7px;
+}
+
+.network-aside p {
+  color: #bacad0;
+  font-size: 11px;
+  line-height: 2;
+  margin: 0;
+}
+
+.aside-divider {
+  height: 1px;
+  background: #ffffff27;
+  margin: 22px 0 17px;
+}
+
+.network-aside > span,
+.network-aside > small {
+  display: block;
+  color: #b5c6cd;
+  font-size: 10px;
+}
+
+.network-aside > strong {
+  display: block;
+  color: #c7eeed;
+  font-size: 36px;
+  line-height: 1.5;
+}
+
+.source-note {
+  font-size: 10px;
+  color: #9ba9aa;
+  margin: 18px 0;
+}
+
+.source-note a,
+.fare-info a {
+  color: #345a79;
+  font-weight: 800;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.source-note a:hover,
+.fare-info a:hover {
+  text-decoration: underline;
+}
+
+.fare-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.fare-card {
+  background: white;
+  border: 1px solid #e9eeee;
+  border-radius: 15px;
+  padding: 23px 20px 18px;
+  min-height: 230px;
+  display: flex;
+  flex-direction: column;
+}
+
+.fare-card.featured {
+  border-color: #88b0bd;
+  box-shadow: 0 8px 28px #28445615;
+}
+
+.fare-card-top {
+  display: flex;
+  justify-content: space-between;
+  color: #a0afb2;
+  font: 800 13px 'DM Sans';
+  margin-bottom: 21px;
+}
+
+.fare-card-top svg {
+  color: #6890a3;
+}
+
+.fare-hint {
+  color: #6593a5;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.fare-card h2 {
+  font-size: 13px;
+  margin: 3px 0 7px;
+  font-weight: 900;
+}
+
+.fare-value {
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.4;
+  color: #1c2e49;
+}
+
+.fare-value small {
+  font-size: 10px;
+  color: #87989b;
+}
+
+.fare-card-bottom {
+  border-top: 1px solid #ebf0ee;
+  margin-top: auto;
+  padding-top: 13px;
+  color: #929fa3;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.fare-card-bottom svg {
+  color: #6f96a7;
+}
+
+.fare-info {
+  display: flex;
+  gap: 17px;
+  padding: 22px;
+  background: #edf5f5;
+  border-radius: 13px;
+  margin-top: 26px;
+}
+
+.fare-info-icon {
+  color: #547f96;
+  flex: none;
+}
+
+.fare-info h3 {
+  font-size: 14px;
+  margin: 0 0 3px;
+}
+
+.fare-info p {
+  color: #718088;
+  font-size: 11px;
+  margin: 0 0 10px;
+  line-height: 2;
+}
+
+.fare-info a {
+  font-size: 10px;
+}
+
+.ticket-cta {
+  background: #1c2c4b;
+  border-radius: 15px;
+  color: white;
+  padding: 26px 31px;
+  margin-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.ticket-cta .eyebrow {
+  color: #b4e2e5;
+}
+
+.ticket-cta h2 {
+  font-size: 19px;
+  margin: 4px 0 0;
+}
+
+.light-button {
+  background: #c2e6e9;
+  color: #182b48;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 17px;
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* Stations page extras */
+.stat-small {
+  font-size: 15px !important;
+  line-height: 2.1;
+}
+
+.interchange-label.planned {
+  color: #8a8fa0;
+  background: #f1f2f6;
+  border: 1px dashed #cfd3df;
+}
+
+.aside-planned {
+  position: relative;
+  z-index: 1;
+}
+
+.aside-planned span,
+.aside-planned small {
+  display: block;
+  color: #b5c6cd;
+  font-size: 10px;
+}
+
+.aside-planned strong {
+  display: block;
+  color: #c7e0ee;
+  font-size: 18px;
+  line-height: 1.8;
+}
+
+.aside-planned small {
+  line-height: 1.9;
+}
+
+/* Fares page extras */
+.fares-subscriptions {
+  margin-top: 24px;
+}
