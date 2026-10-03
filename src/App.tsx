@@ -29,6 +29,8 @@ function Shell() {
   const [ticketOpen, setTicketOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [now, setNow] = useState(() => new Date());
+  /** Ticket id Paymob sends the customer back with (?paid=PAY-XXXX). Never trusted as proof of payment. */
+  const [paidId, setPaidId] = useState<string | null>(() => new URLSearchParams(window.location.search).get('paid'));
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), CLOCK_TICK_MS);
@@ -39,6 +41,22 @@ function Shell() {
     if (user && page === 'auth' && !recovery) setPage(afterLogin);
   }, [user, page, recovery, afterLogin]);
 
+  // Back from Paymob: clean the URL and open the wallet (log in first if the session is gone).
+  useEffect(() => {
+    if (paidId) window.history.replaceState(null, '', window.location.pathname);
+  }, [paidId]);
+
+  useEffect(() => {
+    if (!paidId || loading) return;
+    if (user) {
+      setPage('mytickets');
+    } else {
+      setAfterLogin('mytickets');
+      setAuthMode('login');
+      setPage('auth');
+    }
+  }, [paidId, loading, user]);
+
   const openAuth = (mode: AuthMode, next: Page) => {
     setAfterLogin(next);
     setAuthMode(mode);
@@ -48,6 +66,7 @@ function Shell() {
 
   const go = (target: Page) => {
     if (protectedPages.includes(target) && !user && !loading) return openAuth('login', target);
+    setPaidId(null);
     setPage(target);
     setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -90,7 +109,7 @@ function Shell() {
       case 'fares':
         return <FaresPage onPlan={() => go('home')} />;
       case 'mytickets':
-        return <MyTicketsPage onPlan={() => go('home')} />;
+        return <MyTicketsPage onPlan={() => go('home')} justPaid={paidId} />;
       case 'gate':
         return <GatePage />;
       case 'dashboard':
