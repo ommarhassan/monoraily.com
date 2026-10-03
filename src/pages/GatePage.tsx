@@ -1,19 +1,54 @@
 import { useEffect, useRef, useState } from 'react';
 import jsQR from 'jsqr';
-import { loadTickets, scanAtGate, statusText, tamper, ticketStatus, tokenFrom, type Verdict } from '../lib/ticketing';
+import { useAuth } from '../auth/AuthContext';
+import { myTickets } from '../lib/db';
+import { configured } from '../lib/supabase';
+import {
+  loadTickets,
+  scanAtGate,
+  statusText,
+  tamper,
+  ticketFromRow,
+  ticketStatus,
+  tokenFrom,
+  type Ticket,
+  type Verdict,
+} from '../lib/ticketing';
 
 const VERDICT_VISIBLE_MS = 4500;
 
+/** Tickets live in Supabase (paid ones included); falls back to this device when Supabase is not configured. */
+async function loadAll(): Promise<Ticket[]> {
+  if (!configured) return loadTickets();
+  const rows = await myTickets();
+  return Promise.all(rows.map(ticketFromRow));
+}
+
 export default function GatePage() {
-  const [tickets, setTickets] = useState(loadTickets);
+  const { user } = useAuth();
+  const [tickets, setTickets] = useState<Ticket[]>(() => (configured ? [] : loadTickets()));
+  const [loading, setLoading] = useState(configured);
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [scanning, setScanning] = useState(false);
   const [cameraError, setCameraError] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    void loadAll().then((list) => {
+      if (cancelled) return;
+      setTickets(list);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
   const check = async (token: string) => {
     setVerdict(await scanAtGate(token));
-    setTickets(loadTickets());
+    // "used" status is kept on this device, so a re-render is enough to refresh the list.
+    setTickets((current) => [...current]);
     window.setTimeout(() => setVerdict(null), VERDICT_VISIBLE_MS);
   };
 
@@ -114,7 +149,9 @@ export default function GatePage() {
 
         <aside className="network-aside">
           <h3>تذاكرك</h3>
-          {tickets.length === 0 ? (
+          {loading ? (
+            <p>بنحمّل…</p>
+          ) : tickets.length === 0 ? (
             <p>احجز تذكرة الأول من الرئيسية.</p>
           ) : (
             <ul className="gate-list">
