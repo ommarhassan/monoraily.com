@@ -2,6 +2,7 @@ import QRCode from 'qrcode';
 import { brand } from '../config/brand';
 import { fareForStops, type TicketKind } from '../data/fares';
 import { decodeJson, encodeJson, sign } from './crypto';
+import type { DbTicket } from './db';
 import type { Route } from './routing';
 import { readStorage, writeStorage } from './storage';
 
@@ -65,6 +66,36 @@ export async function issueTicket(route: Route, name: string, pay: string, kind:
   };
   writeStorage('tickets', [ticket, ...loadTickets()]);
   return ticket;
+}
+
+/**
+ * Rebuilds a signed ticket (with its QR token) from a row saved in Supabase.
+ * The DB has no "kind" column, so it is derived: a half ticket always costs the half fare for its stops.
+ */
+export async function ticketFromRow(row: DbTicket): Promise<Ticket> {
+  const exp = new Date(row.exp).getTime();
+  const kind: TicketKind = fareForStops(row.stops, 'half') === row.fare ? 'half' : 'full';
+  const body = encodeJson({
+    id: row.id,
+    n: row.rider_name,
+    f: row.from_station,
+    t: row.to_station,
+    p: row.fare,
+    k: kind,
+    e: exp,
+  } satisfies TokenBody);
+  return {
+    id: row.id,
+    name: row.rider_name,
+    from: row.from_station,
+    to: row.to_station,
+    fare: row.fare,
+    stops: row.stops,
+    kind,
+    exp,
+    pay: row.pay,
+    token: `${body}.${await sign(body)}`,
+  };
 }
 
 /** The QR holds a link, so a phone camera opens the gate result page directly. */
