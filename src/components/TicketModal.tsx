@@ -5,11 +5,14 @@ import { fareForStops, halfTicketEligibility, ticketKindLabels, type TicketKind 
 import { saveTicket } from '../lib/db';
 import { num } from '../lib/format';
 import type { Route } from '../lib/routing';
+import { supabase } from '../lib/supabase';
 import { issueTicket, qrImage, type Ticket } from '../lib/ticketing';
 import Icon from './Icon';
 
 const PAYMENT_METHODS = ['Visa', 'محفظة إلكترونية'];
 const FAKE_PAYMENT_DELAY_MS = 1200;
+/** true = real Paymob checkout (test mode). false = the old fake payment. */
+const USE_PAYMOB = true;
 
 type Step = 'form' | 'paying' | 'issued';
 
@@ -38,6 +41,23 @@ export default function TicketModal({ route, onClose }: { route: Route; onClose:
   const submit = async () => {
     setStep('paying');
     setFailed(false);
+
+    if (USE_PAYMOB) {
+      try {
+        if (!supabase || !user) throw new Error('not signed in');
+        const { data, error } = await supabase.functions.invoke('create-payment', {
+          body: { name: name.trim(), from, to, stops: route.stops, kind },
+        });
+        if (error || !data?.checkout_url) throw error ?? new Error('no checkout url');
+        window.location.href = data.checkout_url; // redirect to Paymob's checkout page
+      } catch (e) {
+        console.error('payment start failed', e);
+        setFailed(true);
+        setStep('form');
+      }
+      return;
+    }
+
     try {
       const [issued] = await Promise.all([
         issueTicket(route, name.trim(), pay, kind),
@@ -142,7 +162,7 @@ export default function TicketModal({ route, onClose }: { route: Route; onClose:
 
             {failed && (
               <p className="modal-copy" role="alert">
-                حصلت مشكلة وإحنا بنصدر التذكرة. جرّب تاني.
+                حصلت مشكلة وإحنا بنبدأ الدفع. جرّب تاني.
               </p>
             )}
 
