@@ -71,7 +71,7 @@ export async function issueTicket(
 /** Asks the server for a signed QR token. The signing secret never reaches the browser. */
 async function fetchToken(ticketId: string): Promise<string> {
   if (!supabase) return '';
-  const { data, error } = await supabase.functions.invoke('ticket-token', { body: { ticket_id: ticketId } });
+    const { data, error } = await supabase.functions.invoke('swift-service', { body: { ticket_id: ticketId } });
   if (error || typeof data?.token !== 'string') {
     console.error('ticket-token failed', error);
     return '';
