@@ -9,8 +9,6 @@ export const brand = {
   tagline: 'رحلتك فوق الزحمة',
   /** Prefix for localStorage keys, so this app never clashes with another one on the same domain. */
   storagePrefix: 'monogo',
-  /** Prefix printed on demo ticket IDs, e.g. MN-1A2B3C4D */
+  /** Prefix printed on ticket IDs, e.g. MN-1A2B3C4D5E */
   ticketPrefix: 'MN',
-  /** Demo only: a real system signs tickets on the server, never in the browser. */
-  demoSecret: 'monogo-demo-secret',
 } as const;
