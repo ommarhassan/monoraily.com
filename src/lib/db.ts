@@ -52,14 +52,19 @@ export async function saveTicket(ticket: Ticket, userId: string): Promise<SaveRe
   return { ok: true };
 }
 
+/** The signed-in user's own tickets only (admins can read everyone's, so we filter explicitly). */
 export async function myTickets(): Promise<DbTicket[]> {
   if (!supabase) return [];
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user.id;
+  if (!userId) return [];
   const { data, error } = await supabase
     .from('tickets')
     .select('*')
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) console.error('myTickets failed:', error.message, error);
-  return (data ?? []) as DbTicket[]; // RLS limits this to the signed-in user's rows
+  return (data ?? []) as DbTicket[];
 }
 
 export async function adminData() {
