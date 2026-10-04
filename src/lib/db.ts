@@ -65,4 +65,11 @@ export async function myTickets(): Promise<DbTicket[]> {
 export async function adminData() {
   if (!supabase) return { users: [] as DbProfile[], tickets: [] as DbTicket[] };
   const [users, tickets] = await Promise.all([
-    supabase.from('profiles').select('*').order('created_at', {
+    supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+    supabase.from('tickets').select('*').order('created_at', { ascending: false }).limit(500),
+  ]);
+  if (users.error) console.error('adminData users failed:', users.error.message, users.error);
+  if (tickets.error) console.error('adminData tickets failed:', tickets.error.message, tickets.error);
+  // RLS returns everything only for admins
+  return { users: (users.data ?? []) as DbProfile[], tickets: (tickets.data ?? []) as DbTicket[] };
+}
