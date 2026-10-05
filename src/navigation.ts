@@ -10,15 +10,16 @@ export const nav = [
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[];
 
 export type NavId = (typeof nav)[number]['id'];
-export type Page = NavId | 'dashboard' | 'admin' | 'auth';
+export type Page = NavId | 'dashboard' | 'admin' | 'auth' | 'verification';
 
 /** Pages that need a signed-in user. */
-export const protectedPages: Page[] = ['mytickets', 'dashboard', 'admin'];
+export const protectedPages: Page[] = ['mytickets', 'dashboard', 'admin', 'verification'];
 
 export const extraPageTitles: Partial<Record<Page, string>> = {
   dashboard: 'لوحتي',
   admin: 'لوحة الأدمن',
   auth: 'الحساب',
+  verification: 'توثيق الفئة',
 };
 
 export const pageTitle = (page: Page) => nav.find((item) => item.id === page)?.label ?? extraPageTitles[page] ?? '';
