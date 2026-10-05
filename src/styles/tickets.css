@@ -215,3 +215,88 @@
   padding: 0 20px;
   height: 45px;
 }
+
+/* Subscriptions */
+
+.price-buy {
+  font: inherit;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--brand);
+  background: transparent;
+  color: var(--brand);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.price-buy:hover,
+.price-buy.selected {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.sub-checkout {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid #dae6e9;
+  background: #f1f6f6;
+  display: grid;
+  gap: 14px;
+}
+
+.sub-checkout h3 {
+  margin: 6px 0 4px;
+}
+
+.sub-checkout p {
+  margin: 0;
+  font-size: 13px;
+  color: #526b79;
+}
+
+.sub-checkout-field {
+  display: grid;
+  gap: 6px;
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.sub-checkout-field input {
+  font: inherit;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #dae6e9;
+  background: #ffffff;
+  color: var(--ink);
+}
+
+.sub-checkout-error {
+  color: #b2402f;
+  font-weight: 700;
+}
+
+.wallet-section-title {
+  margin: 28px 0 12px;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.trip-meter {
+  height: 6px;
+  margin: 8px 0;
+  border-radius: 99px;
+  background: #e4eef1;
+  overflow: hidden;
+}
+
+.trip-meter span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--brand);
+}
