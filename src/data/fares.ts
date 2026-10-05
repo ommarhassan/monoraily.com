@@ -34,7 +34,11 @@ export const ticketKindLabels: Record<TicketKind, string> = {
 /** Half tickets are for riders over 60 and riders with disabilities. */
 export const halfTicketEligibility = 'كبار السن فوق ٦٠ سنة وذوي الإعاقة';
 
+/** Same ids the server uses (create-payment / paymob-webhook). */
+export type PlanId = 'weekly' | 'monthly' | 'quarterly';
+
 export type Subscription = {
+  id: PlanId;
   name: string;
   trips: number;
   validityDays: number;
@@ -43,9 +47,9 @@ export type Subscription = {
 };
 
 export const subscriptions: Subscription[] = [
-  { name: 'أسبوعي', trips: 14, validityDays: 14, prices: [140, 280, 385, 560] },
-  { name: 'شهري', trips: 60, validityDays: 60, prices: [600, 1200, 1650, 2400] },
-  { name: 'ربع سنوي', trips: 180, validityDays: 180, prices: [1800, 3600, 4950, 7200] },
+  { id: 'weekly', name: 'أسبوعي', trips: 14, validityDays: 14, prices: [140, 280, 385, 560] },
+  { id: 'monthly', name: 'شهري', trips: 60, validityDays: 60, prices: [600, 1200, 1650, 2400] },
+  { id: 'quarterly', name: 'ربع سنوي', trips: 180, validityDays: 180, prices: [1800, 3600, 4950, 7200] },
 ];
 
 export const operatingHours = 'من ٦ صباحًا حتى ٧:٥٠ مساءً (آخر قطار)';
