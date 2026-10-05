@@ -48,7 +48,7 @@ export const subscriptions: Subscription[] = [
   { name: 'ربع سنوي', trips: 180, validityDays: 180, prices: [1800, 3600, 4950, 7200] },
 ];
 
-export const operatingHours = 'من ٦ صباحًا حتى ٩ مساءً';
+export const operatingHours = 'من ٦ صباحًا حتى ٧:٥٠ مساءً (آخر قطار)';
 
 /** Full line (21 hops) takes roughly 60 to 70 minutes. */
 export const MINUTES_PER_STOP = 3;
