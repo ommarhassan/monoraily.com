@@ -2,14 +2,47 @@ import { useEffect, useState } from 'react';
 import Stat from '../components/Stat';
 import { adminData, type DbProfile, type DbTicket } from '../lib/db';
 import { formatDateTime, num } from '../lib/format';
+import {
+  categoryLabels,
+  documentUrl,
+  pendingRequests,
+  reviewRequest,
+  type PendingRequest,
+} from '../lib/verification';
 import { mostCommon } from './DashboardPage';
 
 export default function AdminPage() {
   const [data, setData] = useState<{ users: DbProfile[]; tickets: DbTicket[] } | null>(null);
+  const [requests, setRequests] = useState<PendingRequest[]>([]);
+  const [workingId, setWorkingId] = useState<string | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
     adminData().then(setData);
+    void pendingRequests().then(setRequests);
   }, []);
+
+  const openDocument = async (path: string) => {
+    // Open the tab first so the browser doesn't block it, then point it at the short-lived link.
+    const tab = window.open('', '_blank');
+    const url = await documentUrl(path);
+    if (url && tab) {
+      tab.opener = null;
+      tab.location.href = url;
+    } else {
+      tab?.close();
+      setReviewError('مقدرناش نفتح المستند.');
+    }
+  };
+
+  const decide = async (id: string, approve: boolean) => {
+    setWorkingId(id);
+    setReviewError(null);
+    const result = await reviewRequest(id, approve);
+    setWorkingId(null);
+    if (result.ok) setRequests((current) => current.filter((r) => r.id !== id));
+    else setReviewError(result.error ?? 'العملية فشلت.');
+  };
 
   if (!data) {
     return (
@@ -34,6 +67,36 @@ export default function AdminPage() {
         <Stat label="التذاكر" value={num(data.tickets.length)} />
         <Stat label="إجمالي الإيرادات" value={num(revenue)} unit="جنيه" />
         <Stat label="أكثر محطة طلبًا" value={mostCommon(data.tickets.map((t) => t.to_station))} />
+      </div>
+
+      <div className="network-card">
+        <h3>طلبات التوثيق ({num(requests.length)})</h3>
+        {requests.length === 0 ? (
+          <p>مفيش طلبات قيد المراجعة.</p>
+        ) : (
+          <ul className="gate-list">
+            {requests.map((r) => (
+              <li key={r.id}>
+                <div>
+                  <strong>{r.full_name}</strong>
+                  <small>
+                    {categoryLabels[r.category]} · {formatDateTime(r.created_at)}
+                  </small>
+                </div>
+                <button className="outline-button" onClick={() => openDocument(r.doc_path)}>
+                  عرض المستند
+                </button>
+                <button className="dark-button" disabled={workingId === r.id} onClick={() => decide(r.id, true)}>
+                  موافقة
+                </button>
+                <button className="outline-button" disabled={workingId === r.id} onClick={() => decide(r.id, false)}>
+                  رفض
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {reviewError && <p className="gate-error">{reviewError}</p>}
       </div>
 
       <div className="network-layout">
