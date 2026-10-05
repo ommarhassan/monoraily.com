@@ -3,6 +3,7 @@ import { brand } from '../config/brand';
 import { formatTime } from '../lib/format';
 import { pageTitle, type Page } from '../navigation';
 import Icon from './Icon';
+import WeatherBadge from './WeatherBadge';
 
 type Props = {
   page: Page;
@@ -32,6 +33,7 @@ export default function Topbar({ page, now, onOpenMenu, onGo, onLogin, onRegiste
         <span className="live-clock">
           <span className="live-dot" /> توقيت القاهرة <strong>{formatTime(now)}</strong>
         </span>
+        <WeatherBadge />
         {user ? (
           <>
             <button className="topbar-user" onClick={() => onGo('dashboard')}>
