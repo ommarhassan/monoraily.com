@@ -1,4 +1,5 @@
 import { stations } from './network';
+import { westNile } from './westNile';
 
 /** Schematic map canvas size (SVG viewBox units). */
 export const MAP_WIDTH = 1000;
@@ -33,4 +34,30 @@ const eastNileCoordinates: [number, number][] = [
 export const stationPositions = new Map<string, [number, number]>();
 stations.forEach((station, index) => {
   stationPositions.set(station.id, eastNileCoordinates[index]);
+});
+
+/**
+ * West Nile line (under construction): schematic route in the free lower-left area.
+ * One [x, y] per station, in line order (New October first, Wadi El Nile last).
+ */
+const westNileCoordinates: [number, number][] = [
+  [60, 590],
+  [120, 590],
+  [180, 590],
+  [240, 586],
+  [295, 572],
+  [343, 548],
+  [383, 516],
+  [410, 476],
+  [420, 430],
+  [418, 384],
+  [404, 340],
+  [380, 302],
+  [345, 270],
+];
+
+/** Kept separate from `stationPositions`: the West Nile line is for information only (no routing or booking). */
+export const westNilePositions = new Map<string, [number, number]>();
+westNile.stations.forEach((station, index) => {
+  westNilePositions.set(station.name, westNileCoordinates[index]);
 });
