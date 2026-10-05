@@ -13,7 +13,12 @@ type Props = {
 export default function Sidebar({ page, open, signedIn, isAdmin, onGo }: Props) {
   const items: { id: Page; label: string; icon: IconName }[] = [
     ...nav,
-    ...(signedIn ? [{ id: 'dashboard' as const, label: 'لوحتي', icon: 'user' as const }] : []),
+    ...(signedIn
+      ? [
+          { id: 'dashboard' as const, label: 'لوحتي', icon: 'user' as const },
+          { id: 'verification' as const, label: 'توثيق الفئة', icon: 'user' as const },
+        ]
+      : []),
     ...(isAdmin ? [{ id: 'admin' as const, label: 'لوحة الأدمن', icon: 'grid' as const }] : []),
   ];
 
