@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import TrainLayer, { TrainStatus } from '../components/TrainLayer';
 import { fareForStops } from '../data/fares';
 import { lineColors, lineNames, linePaths, stations } from '../data/network';
 import { MAP_HEIGHT, MAP_WIDTH, stationPositions, westNilePositions } from '../data/mapLayout';
@@ -205,6 +206,9 @@ export default function MapPage({ onTicket }: Props) {
               );
             })}
 
+            {/* Estimated train positions (East Nile) */}
+            <TrainLayer />
+
             {/* West Nile stations: tap for info only, never for booking */}
             {westStations.map((station, i) => {
               const [x, y] = westPoints[i];
@@ -270,6 +274,7 @@ export default function MapPage({ onTicket }: Props) {
               <i className="legend-ring" />
               محطة تبديل
             </span>
+            <TrainStatus />
           </div>
         </div>
 
