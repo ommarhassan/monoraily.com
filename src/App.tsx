@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './auth/AuthContext';
+import NewsTicker from './components/NewsTicker';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import TicketModal from './components/TicketModal';
@@ -84,96 +85,4 @@ function Shell() {
         </div>
       );
     }
-    if (recovery) return <AuthScreen mode="reset" setMode={setAuthMode} />;
-
-    const needsLogin = page === 'auth' || (protectedPages.includes(page) && !user);
-    if (needsLogin) {
-      const notice =
-        afterLogin !== 'home' && afterLogin !== 'dashboard' ? 'سجّل دخولك الأول عشان تفتح الصفحة دي.' : undefined;
-      return <AuthScreen mode={authMode} setMode={setAuthMode} notice={notice} />;
-    }
-
-    switch (page) {
-      case 'home':
-        return <HomePage planner={planner} now={now} onGo={go} onBook={book} />;
-      case 'map':
-        return (
-          <MapPage
-            onTicket={(from, to) => {
-              planner.planBetween(from, to);
-              book();
-            }}
-          />
-        );
-      case 'stations':
-        return <StationsPage />;
-      case 'fares':
-        return <FaresPage onPlan={() => go('home')} />;
-      case 'mytickets':
-        return <MyTicketsPage onPlan={() => go('home')} justPaid={paidId} />;
-      case 'gate':
-        return <GatePage />;
-      case 'dashboard':
-        return <DashboardPage onPlan={() => go('home')} />;
-      case 'verification':
-        return <VerificationPage />;
-      case 'admin':
-        return isAdmin ? (
-          <AdminPage />
-        ) : (
-          <div className="subpage">
-            <div className="result-card empty-result">
-              <h3>مش مسموح لك تدخل هنا.</h3>
-              <p>الصفحة دي للأدمن بس.</p>
-            </div>
-          </div>
-        );
-    }
-  };
-
-  return (
-    <div className="app-shell" dir="rtl">
-      <Sidebar page={page} open={menuOpen} signedIn={Boolean(user)} isAdmin={isAdmin} onGo={go} />
-      {menuOpen && <button className="mobile-overlay" aria-label="إغلاق القائمة" onClick={() => setMenuOpen(false)} />}
-
-      <main className="main-content">
-        <Topbar
-          page={page}
-          now={now}
-          onOpenMenu={() => setMenuOpen(true)}
-          onGo={go}
-          onLogin={() => openAuth('login', 'home')}
-          onRegister={() => openAuth('register', 'home')}
-          onSignOut={() => {
-            void signOut();
-            setPage('home');
-          }}
-        />
-        {renderPage()}
-      </main>
-
-      {ticketOpen && planner.route && (
-        <TicketModal
-          route={planner.route}
-          onClose={() => setTicketOpen(false)}
-          onVerify={() => {
-            setTicketOpen(false);
-            go('verification');
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-export default function App() {
-  // A ticket QR opens the app with ?verify=<token>: show the gate result instead of the full app.
-  const token = new URLSearchParams(window.location.search).get('verify');
-  return token ? (
-    <VerifyScreen token={token} />
-  ) : (
-    <AuthProvider>
-      <Shell />
-    </AuthProvider>
-  );
-}
+    if (recovery) return <AuthScreen mode="reset" setMode={setAuthMode}
