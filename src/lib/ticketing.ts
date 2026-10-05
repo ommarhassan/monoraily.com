@@ -1,6 +1,6 @@
 import QRCode from 'qrcode';
-import type { TicketKind } from '../data/fares';
-import type { DbTicket } from './db';
+import type { PlanId, TicketKind } from '../data/fares';
+import type { DbSubscription, DbTicket } from './db';
 import type { Route } from './routing';
 import { readStorage } from './storage';
 import { supabase } from './supabase';
@@ -24,6 +24,22 @@ export type Ticket = {
   pay: string;
 };
 
+/** A subscription pass (weekly / monthly / quarterly). Its QR id starts with `SUB-`. */
+export type SubPass = {
+  id: string;
+  name: string;
+  plan: PlanId;
+  /** Index into `fareZones` (0 to 3). */
+  zone: number;
+  tripsTotal: number;
+  tripsUsed: number;
+  fare: number;
+  /** Expiry timestamp (ms). */
+  exp: number;
+  /** Server-signed QR token. Empty when the pass can no longer be used. */
+  token: string;
+};
+
 export type Verdict =
   | {
       ok: true;
@@ -41,6 +57,13 @@ export type TicketStatus = 'valid' | 'used' | 'expired';
 
 export const statusText: Record<TicketStatus, string> = { valid: 'صالحة', used: 'مستخدمة', expired: 'منتهية' };
 
+/** Same statuses, worded for subscriptions. */
+export const subStatusText: Record<TicketStatus, string> = {
+  valid: 'نشط',
+  used: 'الرحلات خلصت',
+  expired: 'منتهي',
+};
+
 const reasonText = {
   invalid: 'رمز غير صحيح أو متلاعب فيه',
   expired: 'انتهت صلاحية التذكرة',
@@ -54,6 +77,11 @@ const entriesLeft = (t: { passengers?: number; entriesUsed?: number }) => (t.pas
 
 export const ticketStatus = (ticket: Ticket): TicketStatus =>
   entriesLeft(ticket) <= 0 ? 'used' : ticket.exp < Date.now() ? 'expired' : 'valid';
+
+export const tripsLeft = (sub: SubPass) => sub.tripsTotal - sub.tripsUsed;
+
+export const subStatus = (sub: SubPass): TicketStatus =>
+  tripsLeft(sub) <= 0 ? 'used' : sub.exp < Date.now() ? 'expired' : 'valid';
 
 /**
  * Removed: tickets are now created by the server after a successful payment (create-payment + webhook).
@@ -71,7 +99,7 @@ export async function issueTicket(
 /** Asks the server for a signed QR token. The signing secret never reaches the browser. */
 async function fetchToken(ticketId: string): Promise<string> {
   if (!supabase) return '';
-    const { data, error } = await supabase.functions.invoke('swift-service', { body: { ticket_id: ticketId } });
+  const { data, error } = await supabase.functions.invoke('swift-service', { body: { ticket_id: ticketId } });
   if (error || typeof data?.token !== 'string') {
     console.error('ticket-token failed', error);
     return '';
@@ -97,6 +125,45 @@ export async function ticketFromRow(row: DbTicket): Promise<Ticket> {
   };
   if (ticketStatus(ticket) === 'valid') ticket.token = await fetchToken(row.id);
   return ticket;
+}
+
+/** Builds a subscription pass from a Supabase row. A QR token is fetched only while it can still be used. */
+export async function subFromRow(row: DbSubscription): Promise<SubPass> {
+  const sub: SubPass = {
+    id: row.id,
+    name: row.holder_name,
+    plan: row.plan,
+    zone: row.zone,
+    tripsTotal: row.trips_total,
+    tripsUsed: row.trips_used,
+    fare: row.fare,
+    exp: new Date(row.expires_at).getTime(),
+    token: '',
+  };
+  if (subStatus(sub) === 'valid') sub.token = await fetchToken(row.id);
+  return sub;
+}
+
+export type BuyResult = { ok: true; url: string } | { ok: false; message: string };
+
+/**
+ * Starts a subscription purchase. The server works out the price from plan + zone,
+ * so the browser only says which plan, which zone and whose name.
+ */
+export async function buySubscription(plan: PlanId, zone: number, name: string): Promise<BuyResult> {
+  if (!supabase) return { ok: false, message: 'السيرفر مش متصل' };
+  const { data, error } = await supabase.functions.invoke('create-payment', {
+    body: { product: 'subscription', name, plan, zone },
+  });
+  if (error || typeof data?.checkout_url !== 'string') {
+    console.error('buySubscription failed', error, data);
+    const status = (error as { context?: Response } | null)?.context?.status;
+    return {
+      ok: false,
+      message: status === 401 ? 'سجّل دخول الأول' : 'مقدرناش نبدأ الدفع، جرّب تاني بعد شوية',
+    };
+  }
+  return { ok: true, url: data.checkout_url };
 }
 
 /** The QR holds a link, so a phone camera opens the gate result page directly. */
