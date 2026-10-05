@@ -98,13 +98,23 @@ export async function mySubscriptions(): Promise<DbSubscription[]> {
 }
 
 export async function adminData() {
-  if (!supabase) return { users: [] as DbProfile[], tickets: [] as DbTicket[] };
-  const [users, tickets] = await Promise.all([
+  if (!supabase) {
+    return { users: [] as DbProfile[], tickets: [] as DbTicket[], subscriptions: [] as DbSubscription[] };
+  }
+  const [users, tickets, subscriptions] = await Promise.all([
     supabase.from('profiles').select('*').order('created_at', { ascending: false }),
     supabase.from('tickets').select('*').order('created_at', { ascending: false }).limit(500),
+    supabase.from('subscriptions').select('*').order('created_at', { ascending: false }).limit(500),
   ]);
   if (users.error) console.error('adminData users failed:', users.error.message, users.error);
   if (tickets.error) console.error('adminData tickets failed:', tickets.error.message, tickets.error);
+  if (subscriptions.error) {
+    console.error('adminData subscriptions failed:', subscriptions.error.message, subscriptions.error);
+  }
   // RLS returns everything only for admins
-  return { users: (users.data ?? []) as DbProfile[], tickets: (tickets.data ?? []) as DbTicket[] };
+  return {
+    users: (users.data ?? []) as DbProfile[],
+    tickets: (tickets.data ?? []) as DbTicket[],
+    subscriptions: (subscriptions.data ?? []) as DbSubscription[],
+  };
 }
