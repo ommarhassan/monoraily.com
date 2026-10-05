@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { brand } from '../config/brand';
-import { scanAtGate, type Verdict } from '../lib/ticketing';
+import { scanAtGate, verdictDetail, type Verdict } from '../lib/ticketing';
 
-/** Opened when staff scan a ticket QR with a phone camera (URL contains ?verify=<token>). */
+/** Opened when staff scan a ticket or subscription QR with a phone camera (URL contains ?verify=<token>). */
 export default function VerifyScreen({ token }: { token: string }) {
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const started = useRef(false);
@@ -24,13 +24,7 @@ export default function VerifyScreen({ token }: { token: string }) {
           <i />
         </div>
         <h2>{!verdict ? 'جاري التحقق…' : verdict.ok ? 'تم التحقق ✓ اتفضل' : `مرفوض: ${verdict.message}`}</h2>
-        <p>
-          {verdict?.ok
-            ? `${verdict.name} · ${verdict.from} ← ${verdict.to} · دخلة ${verdict.entriesUsed} من ${verdict.passengers}`
-            : verdict
-              ? 'البوابة فضلت مقفولة.'
-              : ''}
-        </p>
+        <p>{verdict?.ok ? verdictDetail(verdict) : verdict ? 'البوابة فضلت مقفولة.' : ''}</p>
         <div className="gate-actions">
           <a className="outline-button" href={window.location.pathname}>
             الرجوع لـ {brand.name}
