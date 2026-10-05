@@ -1,32 +1,48 @@
 import { useEffect, useRef, useState } from 'react';
 import jsQR from 'jsqr';
 import { useAuth } from '../auth/AuthContext';
-import { myTickets } from '../lib/db';
+import { mySubscriptions, myTickets } from '../lib/db';
+import { num } from '../lib/format';
 import { configured, supabase } from '../lib/supabase';
 import {
   loadTickets,
+  planLabel,
   scanAtGate,
   statusText,
+  subFromRow,
+  subStatus,
+  subStatusText,
   tamper,
   ticketFromRow,
   ticketStatus,
   tokenFrom,
+  tripsLeft,
+  verdictDetail,
+  zoneLabel,
+  type SubPass,
   type Ticket,
   type Verdict,
 } from '../lib/ticketing';
 
 const VERDICT_VISIBLE_MS = 4500;
 
-/** Tickets live in Supabase (paid ones included); falls back to this device when Supabase is not configured. */
-async function loadAll(): Promise<Ticket[]> {
-  if (!configured) return loadTickets();
-  const rows = await myTickets();
-  return Promise.all(rows.map(ticketFromRow));
+type Wallet = { tickets: Ticket[]; subs: SubPass[] };
+
+/** Tickets and subscriptions live in Supabase (paid ones included); falls back to this device when Supabase is not configured. */
+async function loadAll(): Promise<Wallet> {
+  if (!configured) return { tickets: loadTickets(), subs: [] };
+  const [rows, subRows] = await Promise.all([myTickets(), mySubscriptions()]);
+  const [tickets, subs] = await Promise.all([
+    Promise.all(rows.map(ticketFromRow)),
+    Promise.all(subRows.map(subFromRow)),
+  ]);
+  return { tickets, subs };
 }
 
 export default function GatePage() {
   const { user } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>(() => (configured ? [] : loadTickets()));
+  const [subs, setSubs] = useState<SubPass[]>([]);
   const [loading, setLoading] = useState(configured);
   const [isStaff, setIsStaff] = useState(false);
   const [verdict, setVerdict] = useState<Verdict | null>(null);
@@ -35,15 +51,18 @@ export default function GatePage() {
   const video = useRef<HTMLVideoElement>(null);
 
   const refresh = async () => {
-    setTickets(await loadAll());
+    const wallet = await loadAll();
+    setTickets(wallet.tickets);
+    setSubs(wallet.subs);
     setLoading(false);
   };
 
   useEffect(() => {
     let cancelled = false;
-    void loadAll().then((list) => {
+    void loadAll().then((wallet) => {
       if (cancelled) return;
-      setTickets(list);
+      setTickets(wallet.tickets);
+      setSubs(wallet.subs);
       setLoading(false);
     });
     return () => {
@@ -73,7 +92,7 @@ export default function GatePage() {
 
   const check = async (token: string) => {
     setVerdict(await scanAtGate(token));
-    void refresh(); // the entry count changed on the server
+    void refresh(); // the entry / trip count changed on the server
     window.setTimeout(() => setVerdict(null), VERDICT_VISIBLE_MS);
   };
 
@@ -124,7 +143,8 @@ export default function GatePage() {
   }, [scanning]);
 
   const state = verdict ? (verdict.ok ? 'ok' : 'no') : 'idle';
-  const firstUsable = tickets.find((t) => t.token);
+  const firstUsable = tickets.find((t) => t.token)?.token ?? subs.find((s) => s.token)?.token;
+  const nothingYet = tickets.length === 0 && subs.length === 0;
 
   return (
     <div className="subpage">
@@ -133,8 +153,8 @@ export default function GatePage() {
         <h1>امسح، وادخل.</h1>
         <p>
           {isStaff
-            ? 'البوابة بتتحقق من التوقيع والصلاحية على السيرفر، وبتخصم دخلة واحدة مع كل مسح.'
-            : 'المسح عند البوابة للموظفين بس. هنا بتشوف حالة تذاكرك.'}
+            ? 'البوابة بتتحقق من التوقيع والصلاحية على السيرفر، وبتخصم دخلة (أو رحلة من الاشتراك) مع كل مسح.'
+            : 'المسح عند البوابة للموظفين بس. هنا بتشوف حالة تذاكرك واشتراكاتك.'}
         </p>
       </div>
 
@@ -155,7 +175,7 @@ export default function GatePage() {
                   {!verdict
                     ? 'شغّل الكاميرا أو اختار تذكرة من القائمة.'
                     : verdict.ok
-                      ? `${verdict.name} · ${verdict.from} ← ${verdict.to} · دخلة ${verdict.entriesUsed} من ${verdict.passengers}`
+                      ? verdictDetail(verdict)
                       : 'البوابة فضلت مقفولة.'}
                 </p>
               </>
@@ -174,7 +194,7 @@ export default function GatePage() {
               <button
                 className="outline-button"
                 disabled={!firstUsable}
-                onClick={() => firstUsable && check(tamper(firstUsable.token))}
+                onClick={() => firstUsable && check(tamper(firstUsable))}
               >
                 جرّب رمز مزوّر
               </button>
@@ -184,33 +204,68 @@ export default function GatePage() {
         )}
 
         <aside className="network-aside">
-          <h3>تذاكرك</h3>
           {loading ? (
             <p>بنحمّل…</p>
-          ) : tickets.length === 0 ? (
-            <p>احجز تذكرة الأول من الرئيسية.</p>
+          ) : nothingYet ? (
+            <>
+              <h3>تذاكرك</h3>
+              <p>احجز تذكرة الأول من الرئيسية.</p>
+            </>
           ) : (
-            <ul className="gate-list">
-              {tickets.map((ticket) => (
-                <li key={ticket.id}>
-                  <div>
-                    <strong>
-                      {ticket.from} ← {ticket.to}
-                    </strong>
-                    <small>
-                      {ticket.id} · {statusText[ticketStatus(ticket)]}
-                      {(ticket.passengers ?? 1) > 1 &&
-                        ` · ${ticket.passengers} ركاب (${ticket.entriesUsed ?? 0}/${ticket.passengers})`}
-                    </small>
-                  </div>
-                  {isStaff && ticket.token && (
-                    <button className="outline-button" onClick={() => check(ticket.token)}>
-                      امسح
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <>
+              {subs.length > 0 && (
+                <>
+                  <h3>اشتراكاتك</h3>
+                  <ul className="gate-list">
+                    {subs.map((sub) => (
+                      <li key={sub.id}>
+                        <div>
+                          <strong>
+                            اشتراك {planLabel(sub.plan)} · {zoneLabel(sub.zone)}
+                          </strong>
+                          <small>
+                            {sub.id} · {subStatusText[subStatus(sub)]} · باقي {num(tripsLeft(sub))} من{' '}
+                            {num(sub.tripsTotal)} رحلة
+                          </small>
+                        </div>
+                        {isStaff && sub.token && (
+                          <button className="outline-button" onClick={() => check(sub.token)}>
+                            امسح
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {tickets.length > 0 && (
+                <>
+                  <h3>تذاكرك</h3>
+                  <ul className="gate-list">
+                    {tickets.map((ticket) => (
+                      <li key={ticket.id}>
+                        <div>
+                          <strong>
+                            {ticket.from} ← {ticket.to}
+                          </strong>
+                          <small>
+                            {ticket.id} · {statusText[ticketStatus(ticket)]}
+                            {(ticket.passengers ?? 1) > 1 &&
+                              ` · ${ticket.passengers} ركاب (${ticket.entriesUsed ?? 0}/${ticket.passengers})`}
+                          </small>
+                        </div>
+                        {isStaff && ticket.token && (
+                          <button className="outline-button" onClick={() => check(ticket.token)}>
+                            امسح
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </>
           )}
         </aside>
       </div>
