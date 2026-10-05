@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import Stat from '../components/Stat';
-import { adminData, type DbProfile, type DbTicket } from '../lib/db';
+import { adminData, type DbProfile, type DbSubscription, type DbTicket } from '../lib/db';
 import { formatDateTime, num } from '../lib/format';
+import { planLabel, zoneLabel } from '../lib/ticketing';
 import {
   categoryLabels,
   documentUrl,
@@ -11,8 +12,10 @@ import {
 } from '../lib/verification';
 import { mostCommon } from './DashboardPage';
 
+type AdminDataState = { users: DbProfile[]; tickets: DbTicket[]; subscriptions: DbSubscription[] };
+
 export default function AdminPage() {
-  const [data, setData] = useState<{ users: DbProfile[]; tickets: DbTicket[] } | null>(null);
+  const [data, setData] = useState<AdminDataState | null>(null);
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [workingId, setWorkingId] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -52,19 +55,26 @@ export default function AdminPage() {
     );
   }
 
-  const revenue = data.tickets.reduce((sum, t) => sum + t.fare, 0);
+  const ticketRevenue = data.tickets.reduce((sum, t) => sum + t.fare, 0);
+  const subscriptionRevenue = data.subscriptions.reduce((sum, s) => sum + s.fare, 0);
+  const revenue = ticketRevenue + subscriptionRevenue;
+  const now = Date.now();
+  const activeSubscriptions = data.subscriptions.filter(
+    (s) => new Date(s.expires_at).getTime() > now && s.trips_used < s.trips_total,
+  ).length;
 
   return (
     <div className="subpage">
       <div className="page-heading">
         <span className="eyebrow green">الإدارة</span>
         <h1>لوحة الأدمن</h1>
-        <p>نظرة عامة على المستخدمين والتذاكر.</p>
+        <p>نظرة عامة على المستخدمين والتذاكر والاشتراكات.</p>
       </div>
 
       <div className="stat-grid">
         <Stat label="المستخدمين" value={num(data.users.length)} />
         <Stat label="التذاكر" value={num(data.tickets.length)} />
+        <Stat label="الاشتراكات النشطة" value={num(activeSubscriptions)} />
         <Stat label="إجمالي الإيرادات" value={num(revenue)} unit="جنيه" />
         <Stat label="أكثر محطة طلبًا" value={mostCommon(data.tickets.map((t) => t.to_station))} />
       </div>
@@ -97,6 +107,49 @@ export default function AdminPage() {
           </ul>
         )}
         {reviewError && <p className="gate-error">{reviewError}</p>}
+      </div>
+
+      <div className="network-card">
+        <h3>آخر الاشتراكات ({num(data.subscriptions.length)})</h3>
+        {data.subscriptions.length === 0 ? (
+          <p>مفيش اشتراكات لسه.</p>
+        ) : (
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>صاحب الاشتراك</th>
+                  <th>الباقة</th>
+                  <th>المنطقة</th>
+                  <th>الرحلات</th>
+                  <th>السعر</th>
+                  <th>ينتهي</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.subscriptions.slice(0, 15).map((s) => {
+                  const left = s.trips_total - s.trips_used;
+                  const expired = new Date(s.expires_at).getTime() <= now;
+                  const status = expired ? 'منتهي' : left <= 0 ? 'الرحلات خلصت' : 'نشط';
+                  return (
+                    <tr key={s.id}>
+                      <td>{s.holder_name}</td>
+                      <td>{planLabel(s.plan)}</td>
+                      <td>{zoneLabel(s.zone)}</td>
+                      <td>
+                        باقي {num(Math.max(left, 0))} من {num(s.trips_total)}
+                      </td>
+                      <td>{num(s.fare)}</td>
+                      <td>{formatDateTime(s.expires_at)}</td>
+                      <td>{status}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="network-layout">
