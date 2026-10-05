@@ -2,9 +2,16 @@ import type { CSSProperties } from 'react';
 import Icon from '../components/Icon';
 import { lineColors, lineMeta, linePaths, plannedLines, stationById } from '../data/network';
 import { operatingHours } from '../data/fares';
+import { westNile, type PlannedStation } from '../data/westNile';
 import { num } from '../lib/format';
 
 const OFFICIAL_URL = 'https://www.nat.gov.eg';
+const WEST_COLOR = '#7b8794';
+const westStations: PlannedStation[] = westNile.stations;
+const westPhases = [
+  { phase: 1, title: 'المرحلة الأولى (تشغيل تجريبي مقرر في أكتوبر 2026)' },
+  { phase: 2, title: 'المرحلة التانية (مقررة في الربع الأول من 2027)' },
+] as const;
 
 /** Splits a line's stations into runs that share the same area (Nasr City, New Cairo, New Capital...). */
 function groupByArea(names: string[]) {
@@ -88,6 +95,39 @@ export default function StationsPage() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          ))}
+
+          {/* West Nile: information only, no booking yet */}
+          <div className="network-header">
+            <div>
+              <span className="eyebrow green">قريبًا</span>
+              <h2>{westNile.name}</h2>
+            </div>
+            <span className="network-count">{westNile.status}</span>
+          </div>
+          <p className="source-note">
+            {num(westNile.stationCount)} محطة · {num(westNile.lengthKm)} كم. {westNile.note}
+          </p>
+
+          {westPhases.map(({ phase, title }) => (
+            <div className="network-branch" key={phase}>
+              <h3>{title}</h3>
+              <div className="network-stations" style={{ '--line-color': WEST_COLOR } as CSSProperties}>
+                {westStations
+                  .filter((station) => station.phase === phase)
+                  .map((station) => (
+                    <div className="network-station" key={station.name}>
+                      <span className={`network-node ${station.connections.length ? 'interchange' : ''}`} />
+                      <span className="network-name">{station.name}</span>
+                      {station.connections.map((c) => (
+                        <span key={c} className="interchange-label planned">
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
               </div>
             </div>
           ))}
