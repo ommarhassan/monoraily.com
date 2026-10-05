@@ -1,6 +1,7 @@
 import QRCode from 'qrcode';
-import type { PlanId, TicketKind } from '../data/fares';
+import { fareZones, subscriptions, type PlanId, type TicketKind } from '../data/fares';
 import type { DbSubscription, DbTicket } from './db';
+import { num } from './format';
 import type { Route } from './routing';
 import { readStorage } from './storage';
 import { supabase } from './supabase';
@@ -43,6 +44,7 @@ export type SubPass = {
 export type Verdict =
   | {
       ok: true;
+      type: 'ticket';
       id: string;
       name: string;
       from: string;
@@ -50,6 +52,16 @@ export type Verdict =
       kind: TicketKind;
       passengers: number;
       entriesUsed: number;
+    }
+  | {
+      ok: true;
+      type: 'subscription';
+      id: string;
+      name: string;
+      plan: PlanId;
+      zone: number;
+      tripsTotal: number;
+      tripsLeft: number;
     }
   | { ok: false; reason: 'invalid' | 'expired' | 'used' | 'error'; message: string };
 
@@ -70,6 +82,12 @@ const reasonText = {
   used: 'التذكرة اتستخدمت قبل كده',
 } as const;
 
+const subReasonText = {
+  invalid: reasonText.invalid,
+  expired: 'انتهى الاشتراك',
+  used: 'رصيد رحلات الاشتراك خلص',
+} as const;
+
 /** Only used when Supabase is not configured (local demo list). */
 export const loadTickets = () => readStorage<Ticket[]>('tickets', []);
 
@@ -82,6 +100,16 @@ export const tripsLeft = (sub: SubPass) => sub.tripsTotal - sub.tripsUsed;
 
 export const subStatus = (sub: SubPass): TicketStatus =>
   tripsLeft(sub) <= 0 ? 'used' : sub.exp < Date.now() ? 'expired' : 'valid';
+
+export const planLabel = (plan: string) => subscriptions.find((s) => s.id === plan)?.name ?? plan;
+
+export const zoneLabel = (zone: number) => (fareZones[zone]?.label ?? '').split(' (')[0];
+
+/** One line describing an accepted scan: used by the gate page and the phone verify screen. */
+export const verdictDetail = (v: Extract<Verdict, { ok: true }>) =>
+  v.type === 'subscription'
+    ? `${v.name} · اشتراك ${planLabel(v.plan)} · ${zoneLabel(v.zone)} · باقي ${num(v.tripsLeft)} من ${num(v.tripsTotal)} رحلة`
+    : `${v.name} · ${v.from} ← ${v.to} · دخلة ${v.entriesUsed} من ${v.passengers}`;
 
 /**
  * Removed: tickets are now created by the server after a successful payment (create-payment + webhook).
@@ -175,7 +203,10 @@ export const qrImage = (token: string) =>
     color: { dark: '#192a4c', light: '#ffffff' },
   });
 
-/** The gate (staff only): the server checks the signature and expiry, then takes one entry atomically. */
+/**
+ * The gate (staff only): the server checks the signature and expiry, then takes one entry
+ * (ticket) or one trip (subscription) atomically.
+ */
 export async function scanAtGate(token: string): Promise<Verdict> {
   const clean = token.trim();
   if (!supabase) return { ok: false, reason: 'error', message: 'السيرفر مش متصل' };
@@ -188,10 +219,26 @@ export async function scanAtGate(token: string): Promise<Verdict> {
     return { ok: false, reason: 'error', message };
   }
 
+  const id = clean.slice(0, clean.lastIndexOf('.'));
+
+  if (data?.ok && data.kind === 'subscription') {
+    return {
+      ok: true,
+      type: 'subscription',
+      id,
+      name: data.rider_name,
+      plan: data.plan,
+      zone: data.zone,
+      tripsTotal: data.trips_total,
+      tripsLeft: data.trips_left,
+    };
+  }
+
   if (data?.ok) {
     return {
       ok: true,
-      id: clean.slice(0, clean.lastIndexOf('.')),
+      type: 'ticket',
+      id,
       name: data.rider_name,
       from: data.from,
       to: data.to,
@@ -200,9 +247,11 @@ export async function scanAtGate(token: string): Promise<Verdict> {
       entriesUsed: data.entries_used,
     };
   }
+
   const reason: 'invalid' | 'expired' | 'used' =
     data?.reason === 'expired' || data?.reason === 'used' ? data.reason : 'invalid';
-  return { ok: false, reason, message: reasonText[reason] };
+  const texts = id.startsWith('SUB-') ? subReasonText : reasonText;
+  return { ok: false, reason, message: texts[reason] };
 }
 
 /** Breaks the signature on purpose, to demo that the gate rejects forged codes. */
