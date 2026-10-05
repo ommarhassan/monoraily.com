@@ -18,6 +18,21 @@ export type DbTicket = {
   line: string;
 };
 
+export type DbSubscription = {
+  id: string;
+  user_id: string;
+  plan: 'weekly' | 'monthly' | 'quarterly';
+  zone: number;
+  holder_name: string;
+  trips_total: number;
+  trips_used: number;
+  fare: number;
+  pay: string | null;
+  starts_at: string;
+  expires_at: string;
+  created_at: string;
+};
+
 export type DbProfile = {
   id: string;
   full_name: string;
@@ -65,6 +80,21 @@ export async function myTickets(): Promise<DbTicket[]> {
     .order('created_at', { ascending: false });
   if (error) console.error('myTickets failed:', error.message, error);
   return (data ?? []) as DbTicket[];
+}
+
+/** The signed-in user's own subscriptions only. */
+export async function mySubscriptions(): Promise<DbSubscription[]> {
+  if (!supabase) return [];
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user.id;
+  if (!userId) return [];
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) console.error('mySubscriptions failed:', error.message, error);
+  return (data ?? []) as DbSubscription[];
 }
 
 export async function adminData() {
