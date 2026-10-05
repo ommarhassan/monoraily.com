@@ -14,6 +14,7 @@ import HomePage from './pages/HomePage';
 import MapPage from './pages/MapPage';
 import MyTicketsPage from './pages/MyTicketsPage';
 import StationsPage from './pages/StationsPage';
+import VerificationPage from './pages/VerificationPage';
 import VerifyScreen from './pages/VerifyScreen';
 
 const CLOCK_TICK_MS = 30_000;
@@ -114,6 +115,8 @@ function Shell() {
         return <GatePage />;
       case 'dashboard':
         return <DashboardPage onPlan={() => go('home')} />;
+      case 'verification':
+        return <VerificationPage />;
       case 'admin':
         return isAdmin ? (
           <AdminPage />
@@ -149,7 +152,16 @@ function Shell() {
         {renderPage()}
       </main>
 
-      {ticketOpen && planner.route && <TicketModal route={planner.route} onClose={() => setTicketOpen(false)} />}
+      {ticketOpen && planner.route && (
+        <TicketModal
+          route={planner.route}
+          onClose={() => setTicketOpen(false)}
+          onVerify={() => {
+            setTicketOpen(false);
+            go('verification');
+          }}
+        />
+      )}
     </div>
   );
 }
