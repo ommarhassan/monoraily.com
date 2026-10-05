@@ -1,13 +1,24 @@
 /* Base: reset-ish defaults and design tokens */
 
 :root {
-  /* Design tokens: change these to re-theme the whole app */
-  --ink: #181e37;
-  --paper: #f7f8f5;
-  --brand: #192a4c;
-  --brand-deep: #171f3e;
-  --sidebar: #11142f;
+  /* Design tokens: change these to re-theme the whole app.
+     Palette taken from the monorail train: royal blue, white, yellow stripe, concrete gray. */
+  --ink: #12163a;
+  --paper: #f5f6fa;
+  --brand: #2832a4;
+  --brand-deep: #1b2277;
+  --sidebar: #151a4f;
   --accent: #a8c8d6;
+
+  /* New tokens (use these in new styles instead of hard-coded colors) */
+  --brand-soft: #e8eafb;
+  --yellow: #f2e52b;
+  --on-yellow: #12163a;
+  --surface: #ffffff;
+  --line: #cbd0da;
+  --muted: #6b7388;
+  --success: #1e9e5a;
+  --danger: #d93a3a;
 }
 
 html {
@@ -38,4 +49,14 @@ button:disabled {
 
 a {
   color: inherit;
+}
+
+::selection {
+  background: var(--yellow);
+  color: var(--on-yellow);
+}
+
+:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
 }
