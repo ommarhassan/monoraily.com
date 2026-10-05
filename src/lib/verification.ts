@@ -65,12 +65,13 @@ export async function myVerification(): Promise<MyVerification> {
   ]);
 
   const today = new Date().toISOString().slice(0, 10);
-  const active = profile.data?.verified_category && profile.data.verified_until >= today;
-  return {
-    category: active ? (profile.data.verified_category as VerificationCategory) : null,
-    until: active ? (profile.data.verified_until as string) : null,
-    latest: (latest.data as VerificationRequest | null) ?? null,
-  };
+  const p = profile.data as { verified_category: string | null; verified_until: string | null } | null;
+  const latestRequest = (latest.data as VerificationRequest | null) ?? null;
+
+  if (p?.verified_category && p.verified_until && p.verified_until >= today) {
+    return { category: p.verified_category as VerificationCategory, until: p.verified_until, latest: latestRequest };
+  }
+  return { category: null, until: null, latest: latestRequest };
 }
 
 export type SubmitResult = { ok: boolean; error?: string };
