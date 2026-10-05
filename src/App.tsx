@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import NewsTicker from './components/NewsTicker';
-import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import TicketModal from './components/TicketModal';
 import { usePlanner } from './hooks/usePlanner';
@@ -134,25 +133,21 @@ function Shell() {
 
   return (
     <div className="app-shell" dir="rtl">
-      <Sidebar page={page} open={menuOpen} signedIn={Boolean(user)} isAdmin={isAdmin} onGo={go} />
-      {menuOpen && <button className="mobile-overlay" aria-label="إغلاق القائمة" onClick={() => setMenuOpen(false)} />}
-
-      <main className="main-content">
-        <Topbar
-          page={page}
-          now={now}
-          onOpenMenu={() => setMenuOpen(true)}
-          onGo={go}
-          onLogin={() => openAuth('login', 'home')}
-          onRegister={() => openAuth('register', 'home')}
-          onSignOut={() => {
-            void signOut();
-            setPage('home');
-          }}
-        />
-        <NewsTicker />
-        {renderPage()}
-      </main>
+      <Topbar
+        page={page}
+        now={now}
+        menuOpen={menuOpen}
+        onToggleMenu={() => setMenuOpen((open) => !open)}
+        onGo={go}
+        onLogin={() => openAuth('login', 'home')}
+        onRegister={() => openAuth('register', 'home')}
+        onSignOut={() => {
+          void signOut();
+          setPage('home');
+        }}
+      />
+      <NewsTicker />
+      <main className="main-content">{renderPage()}</main>
 
       {ticketOpen && planner.route && (
         <TicketModal
