@@ -126,7 +126,7 @@ export default function StationsPage() {
                       {station.connections.map((c) => (
                         <span key={c.label} className={`interchange-label ${c.status === 'planned' ? 'planned' : ''}`}>
                           {c.status === 'active' ? (isAr ? 'تبديل: ' : 'Transfer: ') : ''}
-                          {c.label}
+                          {getStationName(c.label, lang)}
                         </span>
                       ))}
                       {isTerminal && (
@@ -166,7 +166,7 @@ export default function StationsPage() {
                       <span className="network-name">{getStationName(station.name, lang)}</span>
                       {station.connections.map((c) => (
                         <span key={c} className="interchange-label planned">
-                          {c}
+                          {getStationName(c, lang)}
                         </span>
                       ))}
                     </div>
@@ -190,8 +190,12 @@ export default function StationsPage() {
           {plannedLines.map((planned) => (
             <div className="aside-planned" key={planned.name}>
               <span>{isAr ? 'قريبًا' : 'Coming soon'}</span>
-              <strong>{planned.name}</strong>
-              <small>{planned.description}</small>
+              <strong>{isAr ? planned.name : getStationName(planned.name, lang)}</strong>
+              <small>
+                {isAr
+                  ? planned.description
+                  : 'Under construction: 13 stations from 6th of October to Wadi El Nil'}
+              </small>
             </div>
           ))}
         </aside>
