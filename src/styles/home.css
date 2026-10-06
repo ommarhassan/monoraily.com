@@ -867,3 +867,49 @@ html[dir="ltr"] .swap-button {
     gap: 6px;
   }
 }
+/* =======================================
+   إصلاح حركة شريط الأخبار ليعمل بشكل لا نهائي دون توقف
+   ======================================= */
+.news-viewport {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.news-track {
+  display: flex;
+  width: max-content;
+}
+
+.news-track:hover {
+  animation-play-state: paused !important;
+}
+
+/* حركة شريط الأخبار في وضع العربي (RTL) */
+html[dir="rtl"] .news-track,
+:root:not([dir="ltr"]) .news-track {
+  animation: ticker-rtl 35s linear infinite !important;
+}
+
+/* حركة شريط الأخبار في وضع الإنجليزي (LTR) */
+html[dir="ltr"] .news-track {
+  animation: ticker-ltr 35s linear infinite !important;
+}
+
+@keyframes ticker-rtl {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(50%);
+  }
+}
+
+@keyframes ticker-ltr {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
