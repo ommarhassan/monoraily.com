@@ -7,14 +7,14 @@ const STORAGE_KEY = 'monoraily-lang';
 export type Lang = 'ar' | 'en';
 export type TextKey = Key;
 
-const dictionary: Record<Lang, Record<TextKey, string>> = { ar, en };
+const dictionary: Record<Lang, Record<string, string>> = { ar, en };
 
 type LanguageValue = {
   lang: Lang;
   dir: 'rtl' | 'ltr';
   /** Locale for Intl formatters. */
   locale: string;
-  t: (key: TextKey, vars?: Record<string, string | number>) => string;
+  t: (key: string, vars?: Record<string, string | number>) => string;
   toggleLang: () => void;
 };
 
@@ -30,7 +30,7 @@ function initialLang(): Lang {
   return 'ar';
 }
 
-function translate(lang: Lang, key: TextKey, vars?: Record<string, string | number>): string {
+function translate(lang: Lang, key: string, vars?: Record<string, string | number>): string {
   let text = dictionary[lang]?.[key] ?? dictionary.ar[key] ?? String(key);
   if (vars) {
     Object.entries(vars).forEach(([k, v]) => {
