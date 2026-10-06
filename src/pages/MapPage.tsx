@@ -4,6 +4,8 @@ import { fareForStops } from '../data/fares';
 import { lineColors, lineNames, linePaths, stations } from '../data/network';
 import { MAP_HEIGHT, MAP_WIDTH, stationPositions, westNilePositions } from '../data/mapLayout';
 import { westNile, type PlannedStation } from '../data/westNile';
+import { getStationName } from '../components/StationPicker';
+import { useLanguage } from '../i18n/LanguageContext';
 import { num } from '../lib/format';
 import { planRoute } from '../lib/routing';
 
@@ -22,10 +24,6 @@ const endpoints = new Set(lineShapes.flatMap((l) => [l.names[0], l.names[l.names
 const WEST_COLOR = '#7b8794';
 const westStations: PlannedStation[] = westNile.stations;
 const westPoints = westStations.map((s) => westNilePositions.get(s.name)!);
-const phaseText = {
-  1: 'المرحلة الأولى: تشغيل تجريبي مقرر في أكتوبر 2026',
-  2: 'المرحلة التانية: مقررة في الربع الأول من 2027',
-} as const;
 
 /** Where a West Nile label sits, so names don't collide with the line or the East Nile curve. */
 const westLabel = (index: number, x: number, y: number) =>
@@ -38,6 +36,14 @@ const westLabel = (index: number, x: number, y: number) =>
 type Props = { onTicket: (from: string, to: string) => void };
 
 export default function MapPage({ onTicket }: Props) {
+  const { lang, locale } = useLanguage();
+  const isAr = lang === 'ar';
+
+  const phaseText = {
+    1: isAr ? 'المرحلة الأولى: تشغيل تجريبي مقرر في أكتوبر 2026' : 'Phase 1: Trial operation planned for Oct 2026',
+    2: isAr ? 'المرحلة التانية: مقررة في الربع الأول من 2027' : 'Phase 2: Planned for Q1 2027',
+  } as const;
+
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [hover, setHover] = useState('');
@@ -75,28 +81,28 @@ export default function MapPage({ onTicket }: Props) {
   return (
     <div className="subpage">
       <div className="page-heading">
-        <span className="eyebrow green">خريطة تفاعلية</span>
-        <h1>اضغط على محطتين وشوف الطريق.</h1>
-        <p>اسحب الخريطة للتحريك، وكبّر بالأزرار أو بعجلة الماوس.</p>
+        <span className="eyebrow green">{isAr ? 'خريطة تفاعلية' : 'Interactive Map'}</span>
+        <h1>{isAr ? 'اضغط على محطتين وشوف الطريق.' : 'Click two stations to see the route.'}</h1>
+        <p>{isAr ? 'اسحب الخريطة للتحريك، وكبّر بالأزرار أو بعجلة الماوس.' : 'Drag map to pan, use buttons or mouse wheel to zoom.'}</p>
       </div>
 
       <div className="network-layout">
         <div className="network-card map-card">
           <div className="map-tools">
-            <button onClick={() => zoom(0.7)} aria-label="تكبير">
+            <button onClick={() => zoom(0.7)} aria-label={isAr ? 'تكبير' : 'Zoom in'}>
               +
             </button>
-            <button onClick={() => zoom(1 / 0.7)} aria-label="تصغير">
+            <button onClick={() => zoom(1 / 0.7)} aria-label={isAr ? 'تصغير' : 'Zoom out'}>
               −
             </button>
-            <button onClick={() => setView(FULL_VIEW)}>إعادة ضبط</button>
+            <button onClick={() => setView(FULL_VIEW)}>{isAr ? 'إعادة ضبط' : 'Reset'}</button>
           </div>
 
           <svg
             viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
             className="route-map"
             role="img"
-            aria-label="خريطة مونوريل القاهرة: خط شرق النيل وخط غرب النيل (قيد التنفيذ)"
+            aria-label={isAr ? 'خريطة مونوريل القاهرة: خط شرق النيل وخط غرب النيل (قيد التنفيذ)' : 'Cairo Monorail Map: East Nile Line and West Nile Line (Under Construction)'}
             onWheel={(e) => zoom(e.deltaY < 0 ? 0.9 : 1.1)}
             onPointerDown={(e) => {
               drag.current = { x: e.clientX, y: e.clientY, moved: false };
@@ -173,7 +179,7 @@ export default function MapPage({ onTicket }: Props) {
                   className="map-station"
                   tabIndex={0}
                   role="button"
-                  aria-label={station.name}
+                  aria-label={getStationName(station.name, lang)}
                   onPointerEnter={() => setHover(station.id)}
                   onPointerLeave={() => setHover('')}
                   onClick={() => {
@@ -199,7 +205,7 @@ export default function MapPage({ onTicket }: Props) {
                       textAnchor={labelOnLeft ? 'end' : 'start'}
                       className={hover === station.id ? 'map-label hot' : 'map-label'}
                     >
-                      {station.name}
+                      {getStationName(station.name, lang)}
                     </text>
                   )}
                 </g>
@@ -225,7 +231,7 @@ export default function MapPage({ onTicket }: Props) {
                   className="map-station"
                   tabIndex={0}
                   role="button"
-                  aria-label={`${station.name} (قيد التنفيذ)`}
+                  aria-label={`${getStationName(station.name, lang)} (${isAr ? 'قيد التنفيذ' : 'Under construction'})`}
                   onPointerEnter={() => setHover(hoverKey)}
                   onPointerLeave={() => setHover('')}
                   onClick={() => {
@@ -251,7 +257,7 @@ export default function MapPage({ onTicket }: Props) {
                       textAnchor={label.anchor}
                       className={hover === hoverKey ? 'map-label hot' : 'map-label'}
                     >
-                      {station.name}
+                      {getStationName(station.name, lang)}
                     </text>
                   )}
                 </g>
@@ -263,60 +269,62 @@ export default function MapPage({ onTicket }: Props) {
             {Object.keys(lineColors).map((id) => (
               <span key={id}>
                 <i style={{ background: lineColors[id as keyof typeof lineColors] }} />
-                {lineNames[id as keyof typeof lineNames]}
+                {isAr ? lineNames[id as keyof typeof lineNames] : 'East Nile Line'}
               </span>
             ))}
             <span>
               <i style={{ background: WEST_COLOR }} />
-              {westNile.name} (قيد التنفيذ)
+              {isAr ? `${westNile.name} (قيد التنفيذ)` : 'West Nile Line (Under Construction)'}
             </span>
             <span>
               <i className="legend-ring" />
-              محطة تبديل
+              {isAr ? 'محطة تبديل' : 'Interchange Station'}
             </span>
             <TrainStatus />
           </div>
         </div>
 
         <aside className="network-aside">
-          <h3>رحلتك</h3>
+          <h3>{isAr ? 'رحلتك' : 'Your Trip'}</h3>
           <p>
-            من: <b>{from || 'اختار محطة'}</b>
+            {isAr ? 'من: ' : 'From: '}<b>{from ? getStationName(from, lang) : (isAr ? 'اختر محطة' : 'Select a station')}</b>
           </p>
           <p>
-            إلى: <b>{to || 'اختار محطة'}</b>
+            {isAr ? 'إلى: ' : 'To: '}<b>{to ? getStationName(to, lang) : (isAr ? 'اختر محطة' : 'Select a station')}</b>
           </p>
           {route ? (
             <>
               <div className="aside-divider" />
               <span>
-                {num(route.stops)} محطة · {num(route.minutes)} دقيقة
+                {num(route.stops, locale)} {isAr ? 'محطة' : 'stations'} · {num(route.minutes, locale)} {isAr ? 'دقيقة' : 'min'}
               </span>
-              <strong>{num(fareForStops(route.stops))} جنيه</strong>
+              <strong>{num(fareForStops(route.stops), locale)} {isAr ? 'جنيه' : 'EGP'}</strong>
               <button className="light-button map-action" onClick={() => onTicket(from, to)}>
-                احجز تذكرة
+                {isAr ? 'احجز تذكرة' : 'Book Ticket'}
               </button>
             </>
           ) : (
-            <p>اضغط محطة البداية ثم الوصول.</p>
+            <p>{isAr ? 'اضغط محطة البداية ثم الوصول.' : 'Click departure station then arrival.'}</p>
           )}
           {(from || to || westInfo) && (
             <button className="light-button map-action ghost" onClick={clear}>
-              مسح
+              {isAr ? 'مسح' : 'Clear'}
             </button>
           )}
 
           {westInfo && (
             <>
               <div className="aside-divider" />
-              <span>قريبًا</span>
-              <strong>{westInfo.name}</strong>
+              <span>{isAr ? 'قريبًا' : 'Coming soon'}</span>
+              <strong>{getStationName(westInfo.name, lang)}</strong>
               <p>
-                {westNile.name} · {westNile.status}
+                {isAr ? `${westNile.name} · ${westNile.status}` : 'West Nile Line · Under Construction'}
               </p>
               <p>{phaseText[westInfo.phase]}</p>
-              {westInfo.connections.length > 0 && <p>تبديل: {westInfo.connections.join('، ')}</p>}
-              <p>{westNile.note} الحجز متاح حاليًا على خط شرق النيل بس.</p>
+              {westInfo.connections.length > 0 && (
+                <p>{isAr ? 'تبديل: ' : 'Transfer: '}{westInfo.connections.map((c) => getStationName(c, lang)).join(', ')}</p>
+              )}
+              <p>{isAr ? `${westNile.note} الحجز متاح حاليًا على خط شرق النيل بس.` : 'Booking is currently available on the East Nile Line only.'}</p>
             </>
           )}
         </aside>
