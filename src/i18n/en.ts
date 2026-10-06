@@ -8,6 +8,9 @@ export const en: Record<Key, string> = {
   'common.egp': 'EGP',
   'common.amount': '{n} EGP',
   'lang.switchTo': 'Switch to Arabic',
+  'switchLangShort': 'عربي',
+  'clockLabel': 'Cairo time',
+  'mainMenu': 'Main menu',
 
   // navigation
   'nav.home': 'Home',
@@ -73,6 +76,23 @@ export const en: Record<Key, string> = {
   'fares.ctaEyebrow': 'Ready to go?',
   'fares.ctaTitle': 'Plan your trip and see the fare instantly.',
   'fares.ctaButton': 'Plan my trip',
+
+  // RouteResult
+  'route.eyebrow': 'Suggested route',
+  'route.title': 'Your trip is easier than you think',
+  'route.available': 'Route available',
+  'route.timeEst': 'Estimated time',
+  'route.minutes': 'min',
+  'route.stopsCount': 'Number of stations',
+  'route.stops': 'station',
+  'route.stopsPlural': 'stations',
+  'route.fare': 'Ticket price',
+  'route.start': 'Trip start',
+  'route.end': 'Arrival',
+  'route.transferTo': 'Transfer to {line}',
+  'route.transfer': 'Transfer',
+  'route.viewDemoTicket': 'View demo ticket',
+  'route.note': 'Time is an estimate, not a direct train schedule. Half fare is {half} EGP for seniors and riders with disabilities.',
 
   // MyTicketsPage
   'tickets.eyebrow': 'Your wallet',
@@ -160,7 +180,8 @@ export const en: Record<Key, string> = {
   'admin.noName': 'No name',
   'admin.roleAdmin': 'Admin',
   'admin.roleUser': 'User',
-    // HomePage
+
+  // HomePage
   'home.eyebrow': 'Morning or evening, the monorail is waiting',
   'home.welcome': 'Welcome to',
   'home.welcomeSub': 'Your next trip is easier than ever. From the first station to the last, we are with you.',
