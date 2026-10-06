@@ -4,6 +4,7 @@ import NewsTicker from './components/NewsTicker';
 import Topbar from './components/Topbar';
 import TicketModal from './components/TicketModal';
 import { usePlanner } from './hooks/usePlanner';
+import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 import { protectedPages, type Page } from './navigation';
 import AdminPage from './pages/AdminPage';
 import AuthScreen, { type AuthMode } from './pages/AuthScreen';
@@ -21,6 +22,7 @@ const CLOCK_TICK_MS = 30_000;
 
 function Shell() {
   const { user, loading, recovery, isAdmin, signOut } = useAuth();
+  const { dir } = useLanguage();
   const planner = usePlanner();
 
   const [page, setPage] = useState<Page>('home');
@@ -132,7 +134,7 @@ function Shell() {
   };
 
   return (
-    <div className="app-shell" dir="rtl">
+    <div className="app-shell" dir={dir}>
       <Topbar
         page={page}
         now={now}
@@ -169,8 +171,10 @@ export default function App() {
   return token ? (
     <VerifyScreen token={token} />
   ) : (
-    <AuthProvider>
-      <Shell />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <Shell />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
