@@ -151,7 +151,9 @@ function Shell() {
         }}
       />
       <NewsTicker />
-      <main className="main-content">{renderPage()}</main>
+      <main className="main-content" dir={translatedPages.includes(page) ? dir : 'rtl'}>
+  {renderPage()}
+</main>
 
       {ticketOpen && planner.route && (
         <TicketModal
