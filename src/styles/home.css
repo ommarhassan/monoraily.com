@@ -83,7 +83,7 @@
   height: 340px;
   border: 1px solid #8a9bb520;
   border-radius: 50%;
-  right: 28%;
+  inset-inline-end: 28%;
   top: -230px;
   z-index: 1;
   box-shadow:
@@ -96,6 +96,7 @@
   position: relative;
   z-index: 2;
   max-width: 560px;
+  text-align: start;
 }
 
 .hero-kicker {
@@ -158,7 +159,7 @@
 .section-title-row {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: flex-end;
   margin: 36px 0 17px;
   gap: 15px;
 }
@@ -237,7 +238,7 @@
 }
 
 .card-step {
-  margin-right: auto;
+  margin-inline-start: auto;
   color: #9ea9ad;
   font-size: 9px;
   font-weight: 800;
@@ -264,6 +265,7 @@
   font-weight: 800;
   margin-bottom: 7px;
   color: #4b5962;
+  text-align: start;
 }
 
 .station-trigger {
@@ -279,7 +281,7 @@
   color: #28323e;
   font-weight: 800;
   font-size: 12px;
-  text-align: right;
+  text-align: start;
   transition:
     border-color 0.2s,
     box-shadow 0.2s;
@@ -312,7 +314,7 @@
 }
 
 .trigger-chevron {
-  margin-right: auto;
+  margin-inline-start: auto;
   color: #8d98a3;
   transform: rotate(-90deg);
   display: grid;
@@ -324,7 +326,6 @@
   height: 35px;
   position: absolute;
   z-index: 4;
-  left: 17px;
   top: 76px;
   background: #ffffff;
   color: #445d7b;
@@ -335,6 +336,19 @@
   box-shadow: 0 3px 8px #111b2e12;
 }
 
+/* RTL: الزر على اليسار لعدم التداخل مع العنوان على اليمين */
+html[dir="rtl"] .swap-button,
+:root:not([dir="ltr"]) .swap-button {
+  left: 17px;
+  right: auto;
+}
+
+/* LTR: الزر على اليمين لعدم التداخل مع العنوان على اليسار */
+html[dir="ltr"] .swap-button {
+  right: 17px;
+  left: auto;
+}
+
 .swap-button:hover {
   background: #eaf2f5;
 }
@@ -343,7 +357,7 @@
   position: absolute;
   z-index: 10;
   top: calc(100% + 6px);
-  right: 0;
+  inset-inline-start: 0;
   width: 100%;
   background: #ffffff;
   border: 1px solid #e6edee;
@@ -371,6 +385,7 @@
   background: transparent;
   color: #212c3b;
   font-size: 11px;
+  text-align: start;
 }
 
 .station-list {
@@ -385,7 +400,7 @@
   border-radius: 6px;
   padding: 8px 10px;
   width: 100%;
-  text-align: right;
+  text-align: start;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -449,7 +464,7 @@
 }
 
 .dark-button svg:last-child {
-  margin-right: auto;
+  margin-inline-start: auto;
 }
 
 .dark-button.full {
@@ -462,7 +477,7 @@
 }
 
 .plan-button svg {
-  margin-right: auto;
+  margin-inline-start: auto;
 }
 
 .planner-foot {
@@ -482,6 +497,7 @@
 
 .result-card {
   padding: 23px 24px 18px;
+  text-align: start;
 }
 
 .result-head {
@@ -521,7 +537,7 @@
 
 .result-stats > div {
   padding: 0 12px;
-  border-left: 1px solid #e6ecec;
+  border-inline-end: 1px solid #e6ecec;
 }
 
 .result-stats > div:last-child {
@@ -603,8 +619,8 @@
 }
 
 .timeline-segment {
-  border-right: 2px solid var(--segment-color);
-  margin-right: 7px;
+  border-inline-end: 2px solid var(--segment-color);
+  margin-inline-end: 7px;
   padding: 8px 19px 8px 0;
   position: relative;
 }
@@ -639,11 +655,11 @@
 
 .transfer-row {
   margin-top: 11px;
-  margin-right: -27px;
+  margin-inline-end: -27px;
 }
 
 .transfer-tag {
-  margin-right: auto;
+  margin-inline-start: auto;
   color: #77939b;
   background: #eff6f6;
   border-radius: 20px;
@@ -718,7 +734,7 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
-  text-align: right;
+  text-align: start;
   transition:
     transform 0.2s,
     box-shadow 0.2s;
@@ -773,13 +789,13 @@
 }
 
 .quick-card > svg {
-  margin-right: auto;
+  margin-inline-start: auto;
   color: #9caaab;
   flex: none;
 }
 
 .quick-clock {
-  margin-right: auto;
+  margin-inline-start: auto;
   color: #47657a;
   font-size: 10px;
   font-weight: 900;
@@ -794,4 +810,60 @@
   font-size: 9px;
   font-weight: 700;
   padding-top: 30px;
+}
+
+/* =======================================
+   تجاوب كامل مع كافة شاشات الهواتف والموبايل 📱
+   ======================================= */
+@media (max-width: 768px) {
+  .dashboard,
+  .subpage {
+    padding: 16px;
+  }
+
+  .welcome {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .hero {
+    min-height: auto;
+  }
+
+  .hero-copy {
+    padding: 24px 20px;
+  }
+
+  .hero h2 {
+    font-size: 24px;
+  }
+
+  .planner-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .result-stats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .result-stats > div {
+    border-inline-end: 0;
+    border-bottom: 1px solid #e6ecec;
+    padding-bottom: 8px;
+  }
+
+  .result-stats > div:last-child {
+    border-bottom: 0;
+  }
+
+  .main-footer {
+    flex-direction: column;
+    gap: 6px;
+  }
 }
