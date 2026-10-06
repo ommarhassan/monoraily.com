@@ -4,6 +4,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import Icon from './Icon';
 
 const stationTranslations: Record<string, string> = {
+  // East Nile
   'الاستاد': 'Stadium',
   'هشام بركات': 'Hisham Barakat',
   'نوري خطاب': 'Nouri Khattab',
@@ -15,28 +16,55 @@ const stationTranslations: Record<string, string> = {
   'زهراء مدينة نصر': 'Zahraa Nasr City',
   'الطريق الدائري': 'Ring Road',
   'المشير طنطاوي': 'El Mushir Tantawi',
+  'وان تاينتي': 'One Tane',
+  'وان تان': 'One Tane',
+  'المستشفى الجوي': 'Air Force Hospital',
+  'النرجس': 'El Narges',
+  'المستثمرين': 'Investors District',
+  'اللوتس': 'El Lotus',
+  'جولدن سكوير': 'Golden Square',
+  'بيت الوطن': 'Beit El Watan',
+  'مسجد الفتاح العليم': 'Al-Fattah Al-Aleem Mosque',
+  'الحي R1': 'R1 District',
+  'الحي R2': 'R2 District',
+  'حي المال والأعمال': 'Financial & Business District',
+  'مدينة الفنون والثقافة': 'Arts & Culture City',
+  'الحي الحكومي': 'Government District',
+  'مسجد مصر': 'Misr Mosque',
+  'مدينة العدالة': 'Justice City',
   'أرض المعارض': 'Exhibition Center',
   'استاد القاهرة': 'Cairo Stadium',
   'سيتي سنتر': 'City Centre',
   'مستشفى التجمع': 'Tagamoa Hospital',
   'نادي القاهرة الجديدة': 'New Cairo Club',
   'مساجد': 'Mosques',
-  'الحي الحكومي': 'Government District',
-  'مدينة الفنون والثقافة': 'Arts & Culture City',
   'مركز المؤتمرات': 'Conference Center',
-  'مدينة العدالة': 'Justice City',
-  'العاصمة الإدارية': 'Administrative Capital',
   'التجمع الخامس': '5th Settlement',
-  'اللوتس': 'El Lotus',
   'الجامعة الأمريكية': 'AUC',
-  'بيت الوطن': 'Beit El Watan',
-  'المحطة المركزية': 'Central Station',
-  'النرجس': 'El Narges',
-  'الياسمين': 'El Yasmine',
   'الشويفات': 'Choueifat',
-  'سفنكس': 'Sphinx',
+
+  // West Nile
+  'أكتوبر الجديدة': 'New October',
+  'جامعة الأهرام الكندية': 'Ahram Canadian University',
+  'السادات': 'Sadat',
+  'جامعة 6 أكتوبر': '6th of October University',
+  'نقابة المهندسين': 'Engineers Syndicate',
+  'مول مصر': 'Mall of Egypt',
+  'مدينة الشيخ زايد': 'Sheikh Zayed City',
+  'طريق الإسكندرية': 'Alexandria Road',
+  'المنصورية': 'Mansouriya',
+  'المريوطية': 'Marioutiya',
+  'بشتيل': 'Bashtil',
   'وادي النيل': 'Wadi El Nil',
-  'جامعة الدول': 'Gam’at El Dewal',
+
+  // Interchanges & Future Lines
+  'القطار الكهربائي الخفيف LRT': 'LRT Light Rail',
+  'مترو الخط الثالث': 'Metro Line 3',
+  'مترو الخط الرابع (مستقبلاً)': 'Metro Line 4 (Future)',
+  'مترو الخط السادس (مستقبلاً)': 'Metro Line 6 (Future)',
+  'القطار الكهربائي السريع (مستقبلاً)': 'High-Speed Rail (Future)',
+  'محطة سكك حديد الصعيد': 'Upper Egypt Railway Station',
+  'الأتوبيس الترددي BRT': 'BRT Bus Rapid Transit',
 };
 
 export function getStationName(name: string, lang: string): string {
@@ -48,7 +76,6 @@ export function getStationName(name: string, lang: string): string {
 
 type Props = { label: string; value: string; onChange: (stationId: string) => void; accent: string };
 
-/** Searchable dropdown for choosing a station. */
 export default function StationPicker({ label, value, onChange, accent }: Props) {
   const { lang } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -63,7 +90,6 @@ export default function StationPicker({ label, value, onChange, accent }: Props)
     return () => document.removeEventListener('mousedown', closeOnOutsideClick);
   }, []);
 
-  // Filter stations based on Arabic name or English translation query
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return stations;
