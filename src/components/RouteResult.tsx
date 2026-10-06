@@ -27,7 +27,7 @@ function toSegments(route: Route): Segment[] {
 type Props = { route: Route; onTicket: () => void };
 
 export default function RouteResult({ route, onTicket }: Props) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const from = route.names[0];
   const to = route.names[route.names.length - 1];
   const segments = toSegments(route);
@@ -49,19 +49,19 @@ export default function RouteResult({ route, onTicket }: Props) {
         <div>
           <span>{t('route.timeEst')}</span>
           <strong>
-            {num(route.minutes)} <small>{t('route.minutes')}</small>
+            {num(route.minutes, locale)} <small>{t('route.minutes')}</small>
           </strong>
         </div>
         <div>
           <span>{t('route.stopsCount')}</span>
           <strong>
-            {num(route.stops)} <small>{t('route.stops')}</small>
+            {num(route.stops, locale)} <small>{t('route.stops')}</small>
           </strong>
         </div>
         <div>
           <span>{t('route.fare')}</span>
           <strong>
-            {num(route.fare)} <small>{t('common.egp')}</small>
+            {num(route.fare, locale)} <small>{t('common.egp')}</small>
           </strong>
         </div>
       </div>
@@ -86,7 +86,7 @@ export default function RouteResult({ route, onTicket }: Props) {
               <div className="segment-content">
                 <LineBadge line={segment.line} />
                 <span>
-                  {num(segment.stops)} {segment.stops === 1 ? t('route.stops') : t('route.stopsPlural')}
+                  {num(segment.stops, locale)} {segment.stops === 1 ? t('route.stops') : t('route.stopsPlural')}
                 </span>
               </div>
               {nextSegment && (
@@ -116,7 +116,7 @@ export default function RouteResult({ route, onTicket }: Props) {
         <Icon name="ticket" size={19} /> {t('route.viewDemoTicket')} <Icon name="arrow" size={18} />
       </button>
       <p className="estimate-note">
-        <Icon name="info" size={15} /> {t('route.note', { half: num(halfFare) })}
+        <Icon name="info" size={15} /> {t('route.note', { half: num(halfFare, locale) })}
       </p>
     </div>
   );
