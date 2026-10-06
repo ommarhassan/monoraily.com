@@ -69,7 +69,7 @@ export default function Topbar({ page, now, menuOpen, onToggleMenu, onGo, onLogi
   const navLabel = (id: string, arabic: string) => (lang === 'en' ? (navLabelsEn[id] ?? arabic) : arabic);
 
   return (
-    <header className="site-header">
+    <header className="site-header" dir={dir}>
       <div className="header-strip">
         <div className="header-inner strip-inner">
           <div className="strip-group">
