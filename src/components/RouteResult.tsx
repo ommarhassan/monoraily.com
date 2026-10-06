@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { fareForStops } from '../data/fares';
 import { lineColors, lineNames, type LineId } from '../data/network';
+import { useLanguage } from '../i18n/LanguageContext';
 import { num } from '../lib/format';
 import type { Route } from '../lib/routing';
 import Icon from './Icon';
@@ -26,6 +27,7 @@ function toSegments(route: Route): Segment[] {
 type Props = { route: Route; onTicket: () => void };
 
 export default function RouteResult({ route, onTicket }: Props) {
+  const { t, locale } = useLanguage();
   const from = route.names[0];
   const to = route.names[route.names.length - 1];
   const segments = toSegments(route);
@@ -35,31 +37,31 @@ export default function RouteResult({ route, onTicket }: Props) {
     <div className="result-card">
       <div className="result-head">
         <div>
-          <span className="eyebrow green">مسارك المقترح</span>
-          <h3>وصلتك أسهل مما تتخيل</h3>
+          <span className="eyebrow green">{t('route.eyebrow')}</span>
+          <h3>{t('route.title')}</h3>
         </div>
         <span className="result-pill">
-          <Icon name="check" size={14} /> مسار متاح
+          <Icon name="check" size={14} /> {t('route.available')}
         </span>
       </div>
 
       <div className="result-stats">
         <div>
-          <span>المدة التقديرية</span>
+          <span>{t('route.timeEst')}</span>
           <strong>
-            {num(route.minutes)} <small>دقيقة</small>
+            {num(route.minutes, locale)} <small>{t('route.minutes')}</small>
           </strong>
         </div>
         <div>
-          <span>عدد المحطات</span>
+          <span>{t('route.stopsCount')}</span>
           <strong>
-            {num(route.stops)} <small>محطة</small>
+            {num(route.stops, locale)} <small>{t('route.stops')}</small>
           </strong>
         </div>
         <div>
-          <span>سعر التذكرة</span>
+          <span>{t('route.fare')}</span>
           <strong>
-            {num(route.fare)} <small>جنيه</small>
+            {num(route.fare, locale)} <small>{t('common.egp')}</small>
           </strong>
         </div>
       </div>
@@ -69,7 +71,7 @@ export default function RouteResult({ route, onTicket }: Props) {
           <span className="timeline-marker origin" />
           <div>
             <strong>{from}</strong>
-            <small>بداية الرحلة</small>
+            <small>{t('route.start')}</small>
           </div>
         </div>
 
@@ -84,7 +86,7 @@ export default function RouteResult({ route, onTicket }: Props) {
               <div className="segment-content">
                 <LineBadge line={segment.line} />
                 <span>
-                  {num(segment.stops)} {segment.stops === 1 ? 'محطة' : 'محطات'}
+                  {num(segment.stops, locale)} {segment.stops === 1 ? t('route.stops') : t('route.stopsPlural')}
                 </span>
               </div>
               {nextSegment && (
@@ -92,9 +94,9 @@ export default function RouteResult({ route, onTicket }: Props) {
                   <span className="timeline-marker transfer" />
                   <div>
                     <strong>{segment.end}</strong>
-                    <small>بدّل إلى {lineNames[nextSegment.line]}</small>
+                    <small>{t('route.transferTo', { line: lineNames[nextSegment.line] })}</small>
                   </div>
-                  <span className="transfer-tag">تبديل</span>
+                  <span className="transfer-tag">{t('route.transfer')}</span>
                 </div>
               )}
             </div>
@@ -105,17 +107,16 @@ export default function RouteResult({ route, onTicket }: Props) {
           <span className="timeline-marker destination" />
           <div>
             <strong>{to}</strong>
-            <small>الوصول</small>
+            <small>{t('route.end')}</small>
           </div>
         </div>
       </div>
 
       <button className="dark-button full" onClick={onTicket}>
-        <Icon name="ticket" size={19} /> اعرض تذكرة تجريبية <Icon name="arrow" size={18} />
+        <Icon name="ticket" size={19} /> {t('route.viewDemoTicket')} <Icon name="arrow" size={18} />
       </button>
       <p className="estimate-note">
-        <Icon name="info" size={15} /> المدة تقديرية وليست موعد قطار مباشر. نصف التذكرة {num(halfFare)} جنيه لكبار السن
-        وذوي الإعاقة.
+        <Icon name="info" size={15} /> {t('route.note', { half: num(halfFare, locale) })}
       </p>
     </div>
   );
