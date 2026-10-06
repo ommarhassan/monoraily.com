@@ -40,7 +40,7 @@ function GlobeIcon() {
 /** Site header: utility strip (date, clock, weather, account) and the main navigation. */
 export default function Topbar({ page, now, menuOpen, onToggleMenu, onGo, onLogin, onRegister, onSignOut }: Props) {
   const { user, profile, isAdmin } = useAuth();
-  const { lang, locale, t, toggleLang } = useLanguage();
+  const { lang, dir, locale, t, toggleLang } = useLanguage();
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
 
