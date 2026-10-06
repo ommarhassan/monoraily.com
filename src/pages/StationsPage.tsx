@@ -1,17 +1,29 @@
 import type { CSSProperties } from 'react';
 import Icon from '../components/Icon';
-import { lineColors, lineMeta, linePaths, plannedLines, stationById } from '../data/network';
+import { getStationName } from '../components/StationPicker';
 import { operatingHours } from '../data/fares';
+import { lineColors, lineMeta, linePaths, plannedLines, stationById } from '../data/network';
 import { westNile, type PlannedStation } from '../data/westNile';
+import { useLanguage } from '../i18n/LanguageContext';
 import { num } from '../lib/format';
 
 const OFFICIAL_URL = 'https://www.nat.gov.eg';
 const WEST_COLOR = '#7b8794';
 const westStations: PlannedStation[] = westNile.stations;
-const westPhases = [
-  { phase: 1, title: 'المرحلة الأولى (تشغيل تجريبي مقرر في أكتوبر 2026)' },
-  { phase: 2, title: 'المرحلة التانية (مقررة في الربع الأول من 2027)' },
-] as const;
+
+const areaTranslations: Record<string, string> = {
+  'مدينة نصر': 'Nasr City',
+  'القاهرة الجديدة': 'New Cairo',
+  'العاصمة الإدارية': 'New Administrative Capital',
+  'التجمع الخامس': '5th Settlement',
+  '6 أكتوبر': '6th of October',
+  'الشيخ زايد': 'Sheikh Zayed',
+};
+
+function getAreaName(area: string, lang: string): string {
+  if (lang === 'en' && areaTranslations[area]) return areaTranslations[area];
+  return area;
+}
 
 /** Splits a line's stations into runs that share the same area (Nasr City, New Cairo, New Capital...). */
 function groupByArea(names: string[]) {
@@ -26,38 +38,64 @@ function groupByArea(names: string[]) {
 }
 
 export default function StationsPage() {
+  const { lang, locale } = useLanguage();
   const line = lineMeta['east-nile'];
   const path = linePaths.find((p) => p.line === 'east-nile')!;
   const groups = groupByArea(path.names);
   let counter = 0;
 
+  const isAr = lang === 'ar';
+
+  const lineName = isAr ? line.name : 'East Nile Line';
+  const westName = isAr ? westNile.name : 'West Nile Line';
+  const westStatus = isAr ? westNile.status : 'Trial Operation / Under Construction';
+
+  const westPhases = [
+    {
+      phase: 1,
+      title: isAr
+        ? 'المرحلة الأولى (تشغيل تجريبي مقرر في أكتوبر 2026)'
+        : 'Phase 1 (Trial operation planned for Oct 2026)',
+    },
+    {
+      phase: 2,
+      title: isAr
+        ? 'المرحلة التانية (مقررة في الربع الأول من 2027)'
+        : 'Phase 2 (Planned for Q1 2027)',
+    },
+  ] as const;
+
   return (
     <div className="subpage">
       <div className="page-heading">
-        <span className="eyebrow green">شبكة المونوريل</span>
-        <h1>كل محطة، في مكان واحد.</h1>
-        <p>محطات خط شرق النيل بالترتيب، من الاستاد في مدينة نصر لحد مدينة العدالة في العاصمة الإدارية.</p>
+        <span className="eyebrow green">{isAr ? 'شبكة المونوريل' : 'Monorail Network'}</span>
+        <h1>{isAr ? 'كل محطة، في مكان واحد.' : 'Every station, in one place.'}</h1>
+        <p>
+          {isAr
+            ? 'محطات خط شرق النيل بالترتيب، من الاستاد في مدينة نصر لحد مدينة العدالة في العاصمة الإدارية.'
+            : 'East Nile line stations in order, from Stadium in Nasr City to Justice City in the Administrative Capital.'}
+        </p>
       </div>
 
       <div className="stat-grid">
         <div className="stat-card">
-          <span>عدد المحطات</span>
-          <strong>{num(line.stationCount)}</strong>
+          <span>{isAr ? 'عدد المحطات' : 'Number of Stations'}</span>
+          <strong>{num(line.stationCount, locale)}</strong>
         </div>
         <div className="stat-card">
-          <span>طول الخط</span>
+          <span>{isAr ? 'طول الخط' : 'Line Length'}</span>
           <strong>
-            {num(line.lengthKm)} <small>كم</small>
+            {num(line.lengthKm, locale)} <small>{isAr ? 'كم' : 'km'}</small>
           </strong>
         </div>
         <div className="stat-card">
-          <span>زمن الرحلة الكاملة</span>
+          <span>{isAr ? 'زمن الرحلة الكاملة' : 'Full Trip Duration'}</span>
           <strong>
-            ٦٠–٧٠ <small>دقيقة</small>
+            {isAr ? '٦٠–٧٠' : '60–70'} <small>{isAr ? 'دقيقة' : 'min'}</small>
           </strong>
         </div>
         <div className="stat-card">
-          <span>ساعات التشغيل</span>
+          <span>{isAr ? 'ساعات التشغيل' : 'Operating Hours'}</span>
           <strong className="stat-small">{operatingHours}</strong>
         </div>
       </div>
@@ -66,15 +104,17 @@ export default function StationsPage() {
         <div className="network-card">
           <div className="network-header">
             <div>
-              <span className="eyebrow green">دليل المحطات</span>
-              <h2>{line.name}</h2>
+              <span className="eyebrow green">{isAr ? 'دليل المحطات' : 'Stations Guide'}</span>
+              <h2>{lineName}</h2>
             </div>
-            <span className="network-count">{num(path.names.length)} محطة</span>
+            <span className="network-count">
+              {num(path.names.length, locale)} {isAr ? 'محطة' : 'stations'}
+            </span>
           </div>
 
           {groups.map((group) => (
             <div className="network-branch" key={group.area}>
-              <h3>{group.area}</h3>
+              <h3>{getAreaName(group.area, lang)}</h3>
               <div className="network-stations" style={{ '--line-color': lineColors['east-nile'] } as CSSProperties}>
                 {group.names.map((name) => {
                   const station = stationById.get(name)!;
@@ -82,15 +122,17 @@ export default function StationsPage() {
                   return (
                     <div className="network-station" key={name}>
                       <span className={`network-node ${station.connections.length ? 'interchange' : ''}`} />
-                      <span className="network-name">{name}</span>
+                      <span className="network-name">{getStationName(name, lang)}</span>
                       {station.connections.map((c) => (
                         <span key={c.label} className={`interchange-label ${c.status === 'planned' ? 'planned' : ''}`}>
-                          {c.status === 'active' ? 'تبديل: ' : ''}
+                          {c.status === 'active' ? (isAr ? 'تبديل: ' : 'Transfer: ') : ''}
                           {c.label}
                         </span>
                       ))}
                       {isTerminal && (
-                        <span className="terminal-label">{counter === 1 ? 'بداية الخط' : 'نهاية الخط'}</span>
+                        <span className="terminal-label">
+                          {counter === 1 ? (isAr ? 'بداية الخط' : 'Line start') : (isAr ? 'نهاية الخط' : 'Line end')}
+                        </span>
                       )}
                     </div>
                   );
@@ -102,13 +144,14 @@ export default function StationsPage() {
           {/* West Nile: information only, no booking yet */}
           <div className="network-header">
             <div>
-              <span className="eyebrow green">قريبًا</span>
-              <h2>{westNile.name}</h2>
+              <span className="eyebrow green">{isAr ? 'قريبًا' : 'Coming soon'}</span>
+              <h2>{westName}</h2>
             </div>
-            <span className="network-count">{westNile.status}</span>
+            <span className="network-count">{westStatus}</span>
           </div>
           <p className="source-note">
-            {num(westNile.stationCount)} محطة · {num(westNile.lengthKm)} كم. {westNile.note}
+            {num(westNile.stationCount, locale)} {isAr ? 'محطة' : 'stations'} · {num(westNile.lengthKm, locale)} {isAr ? 'كم.' : 'km.'}{' '}
+            {isAr ? westNile.note : 'Trial operation starting soon.'}
           </p>
 
           {westPhases.map(({ phase, title }) => (
@@ -120,7 +163,7 @@ export default function StationsPage() {
                   .map((station) => (
                     <div className="network-station" key={station.name}>
                       <span className={`network-node ${station.connections.length ? 'interchange' : ''}`} />
-                      <span className="network-name">{station.name}</span>
+                      <span className="network-name">{getStationName(station.name, lang)}</span>
                       {station.connections.map((c) => (
                         <span key={c} className="interchange-label planned">
                           {c}
@@ -137,12 +180,16 @@ export default function StationsPage() {
           <div className="aside-symbol">
             <Icon name="monorail" size={26} />
           </div>
-          <h3>قطارات بدون سائق، فوق الزحمة.</h3>
-          <p>المونوريل بيشتغل أوتوماتيك على كوبري علوي، ومحطاته فيها أبواب رصيف للأمان.</p>
+          <h3>{isAr ? 'قطارات بدون سائق، فوق الزحمة.' : 'Driverless trains, above traffic.'}</h3>
+          <p>
+            {isAr
+              ? 'المونوريل بيشتغل أوتوماتيك على كوبري علوي، ومحطاته فيها أبواب رصيف للأمان.'
+              : 'The monorail operates automatically on an elevated viaduct, with platform screen doors for safety.'}
+          </p>
           <div className="aside-divider" />
           {plannedLines.map((planned) => (
             <div className="aside-planned" key={planned.name}>
-              <span>قريبًا</span>
+              <span>{isAr ? 'قريبًا' : 'Coming soon'}</span>
               <strong>{planned.name}</strong>
               <small>{planned.description}</small>
             </div>
@@ -151,9 +198,11 @@ export default function StationsPage() {
       </div>
 
       <p className="source-note">
-        البيانات مبنية على الإعلانات الرسمية لمشروع المونوريل، وممكن تتغير.{' '}
+        {isAr
+          ? 'البيانات مبنية على الإعلانات الرسمية لمشروع المونوريل، وممكن تتغير. '
+          : 'Data is based on official monorail project announcements and subject to change. '}
         <a href={OFFICIAL_URL} target="_blank" rel="noreferrer">
-          الهيئة القومية للأنفاق <Icon name="external" size={13} />
+          {isAr ? 'الهيئة القومية للأنفاق' : 'National Authority for Tunnels'} <Icon name="external" size={13} />
         </a>
       </p>
     </div>
