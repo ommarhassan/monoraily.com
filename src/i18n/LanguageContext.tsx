@@ -1,7 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { dictionary, type Lang, type TextKey } from './dictionary';
+import { ar, type Key } from './ar';
+import { en } from './en';
 
 const STORAGE_KEY = 'monoraily-lang';
+
+export type Lang = 'ar' | 'en';
+export type TextKey = Key;
+
+const dictionary: Record<Lang, Record<TextKey, string>> = { ar, en };
 
 type LanguageValue = {
   lang: Lang;
