@@ -8,7 +8,7 @@ type LanguageValue = {
   dir: 'rtl' | 'ltr';
   /** Locale for Intl formatters. */
   locale: string;
-  t: (key: TextKey) => string;
+  t: (key: TextKey, vars?: Record<string, string | number>) => string;
   toggleLang: () => void;
 };
 
@@ -22,6 +22,16 @@ function initialLang(): Lang {
     // storage can be blocked: fall back to Arabic
   }
   return 'ar';
+}
+
+function translate(lang: Lang, key: TextKey, vars?: Record<string, string | number>): string {
+  let text = dictionary[lang]?.[key] ?? dictionary.ar[key] ?? String(key);
+  if (vars) {
+    Object.entries(vars).forEach(([k, v]) => {
+      text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+    });
+  }
+  return text;
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -44,7 +54,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       lang,
       dir: lang === 'ar' ? 'rtl' : 'ltr',
       locale: lang === 'ar' ? 'ar-EG' : 'en-GB',
-      t: (key) => dictionary[lang][key],
+      t: (key, vars) => translate(lang, key, vars),
       toggleLang,
     }),
     [lang, toggleLang],
