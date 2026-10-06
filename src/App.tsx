@@ -19,6 +19,8 @@ import VerificationPage from './pages/VerificationPage';
 import VerifyScreen from './pages/VerifyScreen';
 
 const CLOCK_TICK_MS = 30_000;
+/** Pages already translated to English. Any other page stays Arabic (rtl) even when English is selected. */
+const translatedPages: Page[] = [];
 
 function Shell() {
   const { user, loading, recovery, isAdmin, signOut } = useAuth();
