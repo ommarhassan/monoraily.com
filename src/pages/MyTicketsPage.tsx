@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import Icon from '../components/Icon';
-import { fareZones, subscriptions, ticketKindLabels } from '../data/fares';
+import { getStationName } from '../components/StationPicker';
+import { ticketKindLabels } from '../data/fares';
+import { useLanguage } from '../i18n/LanguageContext';
 import { mySubscriptions, myTickets } from '../lib/db';
 import { formatTime, num } from '../lib/format';
 import { configured } from '../lib/supabase';
@@ -23,6 +25,7 @@ const POLL_MS = 2000;
 const POLL_MAX_ATTEMPTS = 10;
 
 export default function MyTicketsPage({ onPlan, justPaid }: { onPlan: () => void; justPaid?: string | null }) {
+  const { t, locale, lang } = useLanguage();
   const { user } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>(() => (configured ? [] : loadTickets()));
   const [subs, setSubs] = useState<SubPass[]>([]);
@@ -85,90 +88,107 @@ export default function MyTicketsPage({ onPlan, justPaid }: { onPlan: () => void
   const paidSub = justPaid ? subs.find((s) => s.id === justPaid) : undefined;
   const paymentLate = Boolean(justPaid) && !paidTicket && !paidSub && !waiting && !loading;
 
-  const planName = (plan: string) => subscriptions.find((s) => s.id === plan)?.name ?? plan;
-  const zoneName = (zone: number) => (fareZones[zone]?.label ?? '').split(' (')[0];
+  const planName = (plan: string) => t(`plan.${plan}` as any) || plan;
+  const zoneName = (zone: number) => t(`zone.${zone}.short`);
 
   const isEmpty = tickets.length === 0 && subs.length === 0;
 
   return (
     <div className="subpage">
       <div className="page-heading">
-        <span className="eyebrow green">محفظتك</span>
-        <h1>تذاكرك، في جيبك.</h1>
-        <p>كل تذكرة واشتراك اشتريتهم محفوظين هنا.</p>
+        <span className="eyebrow green">{t('tickets.eyebrow')}</span>
+        <h1>{t('tickets.title')}</h1>
+        <p>{t('tickets.intro')}</p>
       </div>
 
       {paidTicket && (
         <div className="result-card" role="status">
-          <span className="eyebrow green">تم الدفع</span>
-          <h3>تذكرتك جاهزة 🎉</h3>
+          <span className="eyebrow green">{t('tickets.paidEyebrow')}</span>
+          <h3>{t('tickets.ticketReady')}</h3>
           <p>
-            {paidTicket.from} ← {paidTicket.to} · رقم التذكرة {paidTicket.id}
+            {t('tickets.ticketInfo', {
+              route: `${getStationName(paidTicket.from, lang)} ← ${getStationName(paidTicket.to, lang)}`,
+              id: paidTicket.id,
+            })}
           </p>
         </div>
       )}
       {paidSub && (
         <div className="result-card" role="status">
-          <span className="eyebrow green">تم الدفع</span>
-          <h3>اشتراكك اتفعّل 🎉</h3>
+          <span className="eyebrow green">{t('tickets.paidEyebrow')}</span>
+          <h3>{t('tickets.subActivated')}</h3>
           <p>
-            {planName(paidSub.plan)} · {zoneName(paidSub.zone)} · {num(paidSub.tripsTotal)} رحلة
+            {t('tickets.subInfo', {
+              plan: planName(paidSub.plan),
+              zone: zoneName(paidSub.zone),
+              trips: num(paidSub.tripsTotal, locale),
+            })}
           </p>
         </div>
       )}
       {waiting && (
         <div className="result-card" role="status">
-          <span className="eyebrow green">لحظة</span>
-          <h3>بنأكد الدفع…</h3>
-          <p>التذكرة أو الاشتراك هيظهر هنا خلال ثواني.</p>
+          <span className="eyebrow green">{t('tickets.waitEyebrow')}</span>
+          <h3>{t('tickets.waitTitle')}</h3>
+          <p>{t('tickets.waitText')}</p>
         </div>
       )}
       {paymentLate && (
         <div className="result-card" role="status">
-          <h3>الدفع لسه بيتأكد.</h3>
-          <p>لو اتخصم منك، حدّث الصفحة بعد دقيقة وهتلاقيها هنا.</p>
+          <h3>{t('tickets.lateTitle')}</h3>
+          <p>{t('tickets.lateText')}</p>
         </div>
       )}
 
       {loading ? (
-        <p className="auth-sub">بنحمّل…</p>
+        <p className="auth-sub">{t('common.loading')}</p>
       ) : isEmpty ? (
         <div className="result-card empty-result">
           <div className="empty-illustration">
             <Icon name="ticket" size={48} />
           </div>
-          <span className="eyebrow green">لسه مفيش</span>
-          <h3>مفيش تذاكر محفوظة.</h3>
-          <p>خطط رحلتك واحجز أول تذكرة.</p>
+          <span className="eyebrow green">{t('tickets.emptyEyebrow')}</span>
+          <h3>{t('tickets.emptyTitle')}</h3>
+          <p>{t('tickets.emptyText')}</p>
           <button className="dark-button" onClick={onPlan}>
-            ابدأ رحلة جديدة <Icon name="arrow" size={16} />
+            {t('tickets.newTrip')} <Icon name="arrow" size={16} />
           </button>
         </div>
       ) : (
         <>
           {subs.length > 0 && (
             <>
-              <h2 className="wallet-section-title">اشتراكاتك</h2>
+              <h2 className="wallet-section-title">{t('tickets.subsHeading')}</h2>
               <div className="wallet-grid">
                 {subs.map((sub) => {
                   const status = subStatus(sub);
                   const left = tripsLeft(sub);
                   return (
                     <article className={`wallet-card ${status}`} key={sub.id}>
-                      {qrs[sub.id] && <img className="qr-img small" src={qrs[sub.id]} alt={`رمز اشتراك ${sub.id}`} />}
+                      {qrs[sub.id] && (
+                        <img
+                          className="qr-img small"
+                          src={qrs[sub.id]}
+                          alt={t('tickets.qrSubAlt', { id: sub.id })}
+                        />
+                      )}
                       <div>
                         <span className={`status-pill ${status}`}>{subStatusText[status]}</span>
                         <h3>
-                          اشتراك {planName(sub.plan)} · {zoneName(sub.zone)}
+                          {t('tickets.subTitle', { plan: planName(sub.plan), zone: zoneName(sub.zone) })}
                         </h3>
                         <p>
-                          {sub.name} · باقي {num(left)} من {num(sub.tripsTotal)} رحلة
+                          {t('tickets.subLeft', {
+                            name: sub.name,
+                            left: num(Math.max(0, left), locale),
+                            total: num(sub.tripsTotal, locale),
+                          })}
                         </p>
                         <div className="trip-meter" aria-hidden="true">
                           <span style={{ width: `${Math.max(0, Math.min(100, (left / sub.tripsTotal) * 100))}%` }} />
                         </div>
                         <small>
-                          {sub.id} · ينتهي {formatTime(sub.exp)}
+                          {t('tickets.subExpires', { id: sub.id, when: formatTime(sub.exp, locale) })}
                         </small>
                       </div>
                     </article>
@@ -180,25 +200,33 @@ export default function MyTicketsPage({ onPlan, justPaid }: { onPlan: () => void
 
           {tickets.length > 0 && (
             <>
-              {subs.length > 0 && <h2 className="wallet-section-title">تذاكرك</h2>}
+              {subs.length > 0 && <h2 className="wallet-section-title">{t('tickets.ticketsHeading')}</h2>}
               <div className="wallet-grid">
                 {tickets.map((ticket) => {
                   const status = ticketStatus(ticket);
                   return (
                     <article className={`wallet-card ${status}`} key={ticket.id}>
                       {qrs[ticket.id] && (
-                        <img className="qr-img small" src={qrs[ticket.id]} alt={`رمز تذكرة ${ticket.id}`} />
+                        <img
+                          className="qr-img small"
+                          src={qrs[ticket.id]}
+                          alt={t('tickets.qrTicketAlt', { id: ticket.id })}
+                        />
                       )}
                       <div>
                         <span className={`status-pill ${status}`}>{statusText[status]}</span>
                         <h3>
-                          {ticket.from} ← {ticket.to}
+                          {getStationName(ticket.from, lang)} ← {getStationName(ticket.to, lang)}
                         </h3>
                         <p>
-                          {ticket.name} · {num(ticket.fare)} جنيه · {ticketKindLabels[ticket.kind ?? 'full']}
+                          {t('tickets.ticketMeta', {
+                            name: ticket.name,
+                            fare: num(ticket.fare, locale),
+                            kind: ticketKindLabels[ticket.kind ?? 'full'],
+                          })}
                         </p>
                         <small>
-                          {ticket.id} · تنتهي {formatTime(ticket.exp)}
+                          {t('tickets.ticketExpires', { id: ticket.id, when: formatTime(ticket.exp, locale) })}
                         </small>
                       </div>
                     </article>
