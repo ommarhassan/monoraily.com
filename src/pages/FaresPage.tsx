@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import Icon from '../components/Icon';
-import { fareZones, halfTicketEligibility, operatingHours, subscriptions, type PlanId } from '../data/fares';
+import { fareZones, subscriptions, type PlanId } from '../data/fares';
+import { useLanguage } from '../i18n/LanguageContext';
 import { num } from '../lib/format';
 import { configured } from '../lib/supabase';
 import { buySubscription } from '../lib/ticketing';
@@ -11,6 +12,7 @@ type Props = { onPlan: () => void };
 type Choice = { plan: PlanId; zone: number };
 
 export default function FaresPage({ onPlan }: Props) {
+  const { t, locale } = useLanguage();
   const { user } = useAuth();
   const [choice, setChoice] = useState<Choice | null>(null);
   const [holder, setHolder] = useState('');
@@ -19,13 +21,13 @@ export default function FaresPage({ onPlan }: Props) {
 
   const chosenPlan = choice ? subscriptions.find((s) => s.id === choice.plan) : undefined;
   const chosenPrice = chosenPlan && choice ? chosenPlan.prices[choice.zone] : 0;
-  const chosenZone = choice ? fareZones[choice.zone].label.split(' (')[0] : '';
+  const chosenZone = choice ? t(`zone.${choice.zone}.short`) : '';
 
   const pay = async () => {
     if (!choice) return;
     const name = holder.trim();
     if (!name) {
-      setError('اكتب اسم صاحب الاشتراك');
+      setError(t('fares.holderRequired'));
       return;
     }
     setBusy(true);
@@ -42,9 +44,9 @@ export default function FaresPage({ onPlan }: Props) {
   return (
     <div className="subpage">
       <div className="page-heading">
-        <span className="eyebrow green">أسعار التذاكر</span>
-        <h1>اعرف تكلفتها قبل ما تتحرك.</h1>
-        <p>التسعير بالمناطق: كل منطقة ٥ محطات تقريبًا، وكل ما بتعدّي مناطق أكتر السعر بيزيد.</p>
+        <span className="eyebrow green">{t('fares.eyebrow')}</span>
+        <h1>{t('fares.title')}</h1>
+        <p>{t('fares.intro')}</p>
       </div>
 
       <div className="fare-grid">
@@ -54,13 +56,13 @@ export default function FaresPage({ onPlan }: Props) {
               <span>0{i + 1}</span>
               <Icon name="ticket" size={22} />
             </div>
-            <span className="fare-hint">{zone.hint}</span>
-            <h2>{zone.label}</h2>
+            <span className="fare-hint">{t(`zone.${i}.hint`)}</span>
+            <h2>{t(`zone.${i}.label`)}</h2>
             <div className="fare-value">
-              {num(zone.full)} <small>جنيه مصري</small>
+              {num(zone.full, locale)} <small>{t('fares.currencyLong')}</small>
             </div>
             <div className="fare-card-bottom">
-              <Icon name="check" size={16} /> نصف التذكرة: {num(zone.half)} جنيه
+              <Icon name="check" size={16} /> {t('fares.halfValue', { price: num(zone.half, locale) })}
             </div>
           </div>
         ))}
@@ -71,9 +73,12 @@ export default function FaresPage({ onPlan }: Props) {
           <Icon name="info" size={24} />
         </div>
         <div>
-          <h3>نصف التذكرة</h3>
+          <h3>{t('fares.halfTitle')}</h3>
           <p>
-            نصف التذكرة متاح لـ {halfTicketEligibility}. ساعات التشغيل المعلنة: {operatingHours}.
+            {t('fares.halfInfo', {
+              who: t('fares.halfEligibility'),
+              hours: t('fares.operatingHours'),
+            })}
           </p>
         </div>
       </div>
@@ -81,28 +86,28 @@ export default function FaresPage({ onPlan }: Props) {
       <div className="network-card fares-subscriptions">
         <div className="network-header">
           <div>
-            <span className="eyebrow green">اشتراكات</span>
-            <h2>وفّر ٥٠٪ مع الاشتراك</h2>
+            <span className="eyebrow green">{t('fares.subsEyebrow')}</span>
+            <h2>{t('fares.subsTitle')}</h2>
           </div>
         </div>
         <div className="table-scroll">
           <table className="data-table">
             <thead>
               <tr>
-                <th>الاشتراك</th>
-                <th>الرحلات</th>
-                <th>الصلاحية</th>
-                {fareZones.map((zone) => (
-                  <th key={zone.label}>{zone.label.split(' (')[0]}</th>
+                <th>{t('fares.colPlan')}</th>
+                <th>{t('fares.colTrips')}</th>
+                <th>{t('fares.colValidity')}</th>
+                {fareZones.map((zone, i) => (
+                  <th key={zone.label}>{t(`zone.${i}.short`)}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {subscriptions.map((sub) => (
                 <tr key={sub.id}>
-                  <td>{sub.name}</td>
-                  <td>{num(sub.trips)} رحلة</td>
-                  <td>{num(sub.validityDays)} يوم</td>
+                  <td>{t(`plan.${sub.id}`)}</td>
+                  <td>{t('fares.tripsCount', { n: num(sub.trips, locale) })}</td>
+                  <td>{t('fares.daysCount', { n: num(sub.validityDays, locale) })}</td>
                   {sub.prices.map((price, i) => (
                     <td key={i}>
                       {configured ? (
@@ -114,10 +119,10 @@ export default function FaresPage({ onPlan }: Props) {
                             setError('');
                           }}
                         >
-                          {num(price)} جنيه
+                          {t('common.amount', { n: num(price, locale) })}
                         </button>
                       ) : (
-                        <>{num(price)} جنيه</>
+                        <>{t('common.amount', { n: num(price, locale) })}</>
                       )}
                     </td>
                   ))}
@@ -127,58 +132,59 @@ export default function FaresPage({ onPlan }: Props) {
           </table>
         </div>
 
-        {configured && !choice && <p className="source-note">اضغط على السعر اللي يناسبك عشان تشترك.</p>}
+        {configured && !choice && <p className="source-note">{t('fares.pickPrice')}</p>}
 
         {configured && chosenPlan && choice && (
-          <div className="sub-checkout" role="region" aria-label="تأكيد الاشتراك">
+          <div className="sub-checkout" role="region" aria-label={t('fares.confirmAria')}>
             <div>
-              <span className="eyebrow green">اشتراكك</span>
+              <span className="eyebrow green">{t('fares.yourSub')}</span>
               <h3>
-                {chosenPlan.name} · {chosenZone}
+                {t(`plan.${chosenPlan.id}`)} · {chosenZone}
               </h3>
               <p>
-                {num(chosenPlan.trips)} رحلة، صالحة {num(chosenPlan.validityDays)} يوم · {num(chosenPrice)} جنيه
+                {t('fares.subSummary', {
+                  trips: num(chosenPlan.trips, locale),
+                  days: num(chosenPlan.validityDays, locale),
+                  price: num(chosenPrice, locale),
+                })}
               </p>
             </div>
 
             {user ? (
               <>
                 <label className="sub-checkout-field">
-                  اسم صاحب الاشتراك
+                  {t('fares.holderLabel')}
                   <input
                     type="text"
                     value={holder}
                     maxLength={80}
                     onChange={(e) => setHolder(e.target.value)}
-                    placeholder="الاسم زي ما هيظهر على الكارت"
+                    placeholder={t('fares.holderPlaceholder')}
                   />
                 </label>
                 <button className="dark-button" onClick={pay} disabled={busy}>
-                  {busy ? 'لحظة…' : `ادفع ${num(chosenPrice)} جنيه`} <Icon name="arrow" size={16} />
+                  {busy ? t('common.wait') : t('fares.pay', { price: num(chosenPrice, locale) })}{' '}
+                  <Icon name="arrow" size={16} />
                 </button>
               </>
             ) : (
-              <p className="auth-sub">سجّل دخول الأول عشان تقدر تشترك.</p>
+              <p className="auth-sub">{t('fares.loginFirst')}</p>
             )}
             {error && <p className="sub-checkout-error">{error}</p>}
           </div>
         )}
       </div>
 
-      <p className="source-note">
-        الأسعار حسب إعلان وزارة النقل عند بدء التشغيل، وممكن تتغير. التأكيد النهائي عند الشراء من المحطة.
-      </p>
-      <p className="source-note">
-        ملاحظة عن الاشتراكات: المنطقة بتتحدد وقت الشراء بس، ومش بتتفحص عند الدخول لأن مفيش بوابات خروج.
-      </p>
+      <p className="source-note">{t('fares.sourceNote1')}</p>
+      <p className="source-note">{t('fares.sourceNote2')}</p>
 
       <div className="ticket-cta">
         <div>
-          <span className="eyebrow">مستعد للانطلاق؟</span>
-          <h2>خطط رحلتك واعرف سعرها فورًا.</h2>
+          <span className="eyebrow">{t('fares.ctaEyebrow')}</span>
+          <h2>{t('fares.ctaTitle')}</h2>
         </div>
         <button className="light-button" onClick={onPlan}>
-          خطط رحلتي <Icon name="arrow" size={18} />
+          {t('fares.ctaButton')} <Icon name="arrow" size={18} />
         </button>
       </div>
     </div>
