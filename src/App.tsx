@@ -136,7 +136,7 @@ function Shell() {
   };
 
   return (
-    <div className="app-shell" dir="rtl">
+    <div className="app-shell" dir={dir}>
       <Topbar
         page={page}
         now={now}
