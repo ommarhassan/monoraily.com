@@ -6,6 +6,9 @@ export const ar = {
   'common.egp': 'جنيه',
   'common.amount': '{n} جنيه',
   'lang.switchTo': 'التبديل إلى الإنجليزية',
+  'switchLangShort': 'English',
+  'clockLabel': 'القاهرة',
+  'mainMenu': 'القائمة الرئيسية',
 
   // navigation
   'nav.home': 'الرئيسية',
@@ -71,6 +74,23 @@ export const ar = {
   'fares.ctaEyebrow': 'مستعد للانطلاق؟',
   'fares.ctaTitle': 'خطط رحلتك واعرف سعرها فورًا.',
   'fares.ctaButton': 'خطط رحلتي',
+
+  // RouteResult
+  'route.eyebrow': 'مسارك المقترح',
+  'route.title': 'وصلتك أسهل مما تتخيل',
+  'route.available': 'مسار متاح',
+  'route.timeEst': 'المدة التقديرية',
+  'route.minutes': 'دقيقة',
+  'route.stopsCount': 'عدد المحطات',
+  'route.stops': 'محطة',
+  'route.stopsPlural': 'محطات',
+  'route.fare': 'سعر التذكرة',
+  'route.start': 'بداية الرحلة',
+  'route.end': 'الوصول',
+  'route.transferTo': 'بدّل إلى {line}',
+  'route.transfer': 'تبديل',
+  'route.viewDemoTicket': 'اعرض تذكرة تجريبية',
+  'route.note': 'المدة تقديرية وليست موعد قطار مباشر. نصف التذكرة {half} جنيه لكبار السن وذوي الإعاقة.',
 
   // MyTicketsPage
   'tickets.eyebrow': 'محفظتك',
