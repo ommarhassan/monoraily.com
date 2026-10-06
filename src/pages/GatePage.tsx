@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import jsQR from 'jsqr';
 import { useAuth } from '../auth/AuthContext';
+import { getStationName } from '../components/StationPicker';
+import { useLanguage } from '../i18n/LanguageContext';
 import { mySubscriptions, myTickets } from '../lib/db';
 import { num } from '../lib/format';
 import { configured, supabase } from '../lib/supabase';
@@ -40,6 +42,7 @@ async function loadAll(): Promise<Wallet> {
 }
 
 export default function GatePage() {
+  const { t, locale, lang } = useLanguage();
   const { user } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>(() => (configured ? [] : loadTickets()));
   const [subs, setSubs] = useState<SubPass[]>([]);
@@ -149,13 +152,9 @@ export default function GatePage() {
   return (
     <div className="subpage">
       <div className="page-heading">
-        <span className="eyebrow green">محاكاة بوابة المحطة</span>
-        <h1>امسح، وادخل.</h1>
-        <p>
-          {isStaff
-            ? 'البوابة بتتحقق من التوقيع والصلاحية على السيرفر، وبتخصم دخلة (أو رحلة من الاشتراك) مع كل مسح.'
-            : 'المسح عند البوابة للموظفين بس. هنا بتشوف حالة تذاكرك واشتراكاتك.'}
-        </p>
+        <span className="eyebrow green">{t('gate.eyebrow')}</span>
+        <h1>{t('gate.title')}</h1>
+        <p>{isStaff ? t('gate.introStaff') : t('gate.introRider')}</p>
       </div>
 
       <div className="network-layout">
@@ -170,13 +169,19 @@ export default function GatePage() {
               <video ref={video} className="scan-video" muted playsInline />
             ) : (
               <>
-                <h2>{!verdict ? 'جاهزة للمسح' : verdict.ok ? 'اتفضل، تم التحقق ✓' : `مرفوض: ${verdict.message}`}</h2>
+                <h2>
+                  {!verdict
+                    ? t('gate.ready')
+                    : verdict.ok
+                    ? t('gate.verified')
+                    : t('gate.rejected', { reason: verdict.message })}
+                </h2>
                 <p>
                   {!verdict
-                    ? 'شغّل الكاميرا أو اختار تذكرة من القائمة.'
+                    ? t('gate.readyHint')
                     : verdict.ok
-                      ? verdictDetail(verdict)
-                      : 'البوابة فضلت مقفولة.'}
+                    ? verdictDetail(verdict)
+                    : t('gate.stayedClosed')}
                 </p>
               </>
             )}
@@ -189,48 +194,52 @@ export default function GatePage() {
                   setScanning((s) => !s);
                 }}
               >
-                {scanning ? 'إيقاف الكاميرا' : 'امسح بالكاميرا'}
+                {scanning ? t('gate.stopCamera') : t('gate.scanCamera')}
               </button>
               <button
                 className="outline-button"
                 disabled={!firstUsable}
                 onClick={() => firstUsable && check(tamper(firstUsable))}
               >
-                جرّب رمز مزوّر
+                {t('gate.tryForged')}
               </button>
             </div>
-            {cameraError && <p className="gate-error">مقدرناش نفتح الكاميرا. اسمح بالوصول أو امسح من القائمة.</p>}
+            {cameraError && <p className="gate-error">{t('gate.cameraError')}</p>}
           </div>
         )}
 
         <aside className="network-aside">
           {loading ? (
-            <p>بنحمّل…</p>
+            <p>{t('common.loading')}</p>
           ) : nothingYet ? (
             <>
-              <h3>تذاكرك</h3>
-              <p>احجز تذكرة الأول من الرئيسية.</p>
+              <h3>{t('tickets.ticketsHeading')}</h3>
+              <p>{t('gate.noneYet')}</p>
             </>
           ) : (
             <>
               {subs.length > 0 && (
                 <>
-                  <h3>اشتراكاتك</h3>
+                  <h3>{t('tickets.subsHeading')}</h3>
                   <ul className="gate-list">
                     {subs.map((sub) => (
                       <li key={sub.id}>
                         <div>
                           <strong>
-                            اشتراك {planLabel(sub.plan)} · {zoneLabel(sub.zone)}
+                            {t('tickets.subTitle', { plan: planLabel(sub.plan), zone: zoneLabel(sub.zone) })}
                           </strong>
                           <small>
-                            {sub.id} · {subStatusText[subStatus(sub)]} · باقي {num(tripsLeft(sub))} من{' '}
-                            {num(sub.tripsTotal)} رحلة
+                            {t('gate.subMeta', {
+                              id: sub.id,
+                              status: subStatusText[subStatus(sub)],
+                              left: num(tripsLeft(sub), locale),
+                              total: num(sub.tripsTotal, locale),
+                            })}
                           </small>
                         </div>
                         {isStaff && sub.token && (
                           <button className="outline-button" onClick={() => check(sub.token)}>
-                            امسح
+                            {t('gate.scan')}
                           </button>
                         )}
                       </li>
@@ -241,23 +250,26 @@ export default function GatePage() {
 
               {tickets.length > 0 && (
                 <>
-                  <h3>تذاكرك</h3>
+                  <h3>{t('tickets.ticketsHeading')}</h3>
                   <ul className="gate-list">
                     {tickets.map((ticket) => (
                       <li key={ticket.id}>
                         <div>
                           <strong>
-                            {ticket.from} ← {ticket.to}
+                            {getStationName(ticket.from, lang)} ← {getStationName(ticket.to, lang)}
                           </strong>
                           <small>
                             {ticket.id} · {statusText[ticketStatus(ticket)]}
                             {(ticket.passengers ?? 1) > 1 &&
-                              ` · ${ticket.passengers} ركاب (${ticket.entriesUsed ?? 0}/${ticket.passengers})`}
+                              t('gate.passengers', {
+                                n: num(ticket.passengers ?? 1, locale),
+                                used: num(ticket.entriesUsed ?? 0, locale),
+                              })}
                           </small>
                         </div>
                         {isStaff && ticket.token && (
                           <button className="outline-button" onClick={() => check(ticket.token)}>
-                            امسح
+                            {t('gate.scan')}
                           </button>
                         )}
                       </li>
