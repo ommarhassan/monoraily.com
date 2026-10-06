@@ -123,7 +123,7 @@
 
 .account-dropdown {
   position: absolute;
-  left: 0;
+  inset-inline-end: 0;
   top: calc(100% + 10px);
   min-width: 190px;
   display: grid;
@@ -141,7 +141,7 @@
   border: 0;
   border-radius: 8px;
   padding: 10px 12px;
-  text-align: right;
+  text-align: start;
   font-size: 13px;
   font-weight: 700;
   color: var(--ink);
@@ -220,6 +220,13 @@
   margin-top: 3px;
 }
 
+html[lang='en'] .site-brand-text small {
+  direction: ltr;
+  text-align: left;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* The links share the whole bar, so no empty gap is left beside the brand */
 .main-nav {
   display: flex;
   align-items: stretch;
@@ -229,6 +236,7 @@
 
 .nav-link {
   position: relative;
+  flex: 1 1 auto;
   height: 68px;
   padding: 0 14px;
   background: none;
@@ -236,6 +244,7 @@
   font-size: 14px;
   font-weight: 800;
   color: var(--ink);
+  text-align: center;
   white-space: nowrap;
   transition: color 0.2s;
 }
@@ -254,6 +263,32 @@
   height: 4px;
   background: var(--brand);
   border-radius: 4px 4px 0 0;
+}
+
+/* ---------- Language switch ---------- */
+
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  margin-inline-start: auto;
+  height: 38px;
+  padding: 0 14px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  border: 1px solid transparent;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 800;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.lang-toggle:hover {
+  background: var(--brand);
+  color: #ffffff;
 }
 
 .mobile-menu {
