@@ -3,7 +3,6 @@ import Icon from '../components/Icon';
 import MonorailScene from '../components/MonorailScene';
 import RouteResult from '../components/RouteResult';
 import StationPicker from '../components/StationPicker';
-import { operatingHours } from '../data/fares';
 import { lineMeta } from '../data/network';
 import type { Planner } from '../hooks/usePlanner';
 import { useLanguage } from '../i18n/LanguageContext';
