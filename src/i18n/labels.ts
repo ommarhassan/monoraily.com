@@ -1,6 +1,6 @@
 import { fareZones, subscriptions } from '../data/fares';
 import { getLang, translate } from './index';
-import { stationNamesEn } from './stations';
+import { stationNamesEn } from '../data/stations'
 
 /** Display name of a station. The Arabic name stays the internal value. */
 export const stationName = (arabicName: string) =>
