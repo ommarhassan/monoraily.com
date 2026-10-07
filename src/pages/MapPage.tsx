@@ -4,6 +4,7 @@ import { getStationName } from '../components/StationPicker';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface MapPageProps {
+  onTicket?: (from?: any, to?: any) => void;
   onSelectStation?: (stationId: string) => void;
 }
 
@@ -14,7 +15,7 @@ const hasLine = (st: any, lineId: string): boolean => {
   return false;
 };
 
-export default function MapPage({ onSelectStation }: MapPageProps) {
+export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
   const { lang } = useLanguage();
 
   // Selected filter line state: 'all' | 'east-nile' | 'west-nile'
@@ -383,9 +384,15 @@ export default function MapPage({ onSelectStation }: MapPageProps) {
                   </div>
                 </div>
 
-                <div className="text-xs text-amber-400 font-bold bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                  محددة حالياً
-                </div>
+                {/* Optional Ticket Trigger */}
+                {onTicket && (
+                  <button
+                    onClick={() => onTicket(selectedStation.id, selectedStation.id)}
+                    className="text-xs text-amber-400 font-bold bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition"
+                  >
+                    محددة حالياً
+                  </button>
+                )}
               </div>
             )}
 
