@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import Stat from '../components/Stat';
-import { useLanguage } from '../i18n/LanguageContext';
 import { myTickets, type DbTicket } from '../lib/db';
 import { formatDateTime, num } from '../lib/format';
 
@@ -14,7 +13,6 @@ export const mostCommon = (items: string[]) => {
 
 export default function DashboardPage({ onPlan }: { onPlan: () => void }) {
   const { user, profile, updateName, signOut } = useAuth();
-  const { t } = useLanguage();
   const [tickets, setTickets] = useState<DbTicket[] | null>(null);
   const [name, setName] = useState(profile?.full_name ?? '');
   const [message, setMessage] = useState('');
@@ -36,53 +34,51 @@ export default function DashboardPage({ onPlan }: { onPlan: () => void }) {
     };
   }, [tickets]);
 
-  const save = async () => setMessage((await updateName(name.trim())) ?? t('saved'));
+  const save = async () => setMessage((await updateName(name.trim())) ?? 'اتحفظ ✓');
 
   return (
     <div className="subpage">
       <div className="page-heading">
-        <span className="eyebrow green">{t('dashEyebrow')}</span>
-        <h1>{profile?.full_name ? t('dashWelcome', { name: profile.full_name }) : t('dashWelcomeAnon')}</h1>
+        <span className="eyebrow green">لوحة التحكم</span>
+        <h1>أهلًا {profile?.full_name || 'بيك'} 👋</h1>
         <p>
           {user?.email}
-          {profile?.role === 'admin' && t('adminSuffix')}
+          {profile?.role === 'admin' && ' · أدمن'}
         </p>
       </div>
 
       <div className="stat-grid">
-        <Stat label={t('statTickets')} value={num(stats.count)} />
-        <Stat label={t('statSpent')} value={num(stats.spent)} unit={t('currencyEgp')} />
-        <Stat label={t('statStops')} value={num(stats.stops)} />
-        <Stat label={t('statFavourite')} value={stats.favourite} />
+        <Stat label="عدد التذاكر" value={num(stats.count)} />
+        <Stat label="إجمالي المصروف" value={num(stats.spent)} unit="جنيه" />
+        <Stat label="محطات اتقطعت" value={num(stats.stops)} />
+        <Stat label="محطتك المفضلة" value={stats.favourite} />
       </div>
 
       <div className="network-layout">
         <div className="network-card">
           <div className="network-header">
-            <h2>{t('recentTrips')}</h2>
+            <h2>آخر رحلاتك</h2>
             <button className="outline-button no-margin" onClick={onPlan}>
-              {t('newTrip')}
+              رحلة جديدة
             </button>
           </div>
           {tickets === null ? (
-            <p className="auth-sub">{t('loading')}</p>
+            <p className="auth-sub">بنحمّل…</p>
           ) : tickets.length === 0 ? (
-            <p className="auth-sub">{t('noTickets')}</p>
+            <p className="auth-sub">لسه ماحجزتش أي تذكرة.</p>
           ) : (
             <ul className="gate-list">
-              {tickets.slice(0, 8).map((ticket) => (
-                <li key={ticket.id}>
+              {tickets.slice(0, 8).map((t) => (
+                <li key={t.id}>
                   <div>
                     <strong>
-                      {ticket.from_station} ← {ticket.to_station}
+                      {t.from_station} ← {t.to_station}
                     </strong>
                     <small>
-                      {ticket.id} · {formatDateTime(ticket.created_at)}
+                      {t.id} · {formatDateTime(t.created_at)}
                     </small>
                   </div>
-                  <strong>
-                    {num(ticket.fare)} {t('currencyShort')}
-                  </strong>
+                  <strong>{num(t.fare)} ج</strong>
                 </li>
               ))}
             </ul>
@@ -90,9 +86,9 @@ export default function DashboardPage({ onPlan }: { onPlan: () => void }) {
         </div>
 
         <aside className="network-card">
-          <h3>{t('myDetails')}</h3>
+          <h3>بياناتي</h3>
           <label className="name-label" htmlFor="p-name">
-            {t('nameLabel')}
+            الاسم
           </label>
           <input
             id="p-name"
@@ -106,11 +102,11 @@ export default function DashboardPage({ onPlan }: { onPlan: () => void }) {
             disabled={name.trim().length < 2 || name.trim() === profile?.full_name}
             onClick={save}
           >
-            {t('save')}
+            حفظ
           </button>
           {message && <p className="auth-note">{message}</p>}
           <button className="outline-button full" onClick={() => void signOut()}>
-            {t('signOutLong')}
+            تسجيل الخروج
           </button>
         </aside>
       </div>
