@@ -201,7 +201,7 @@ export default function MapPage({ onTicket }: Props) {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
               <TrainIcon className="w-3.5 h-3.5" />
-              <span>{isAr ? 'خريطة شبكة المونوريل تفاعلية 2026' : 'Interactive Monorail Network Map'}</span>
+              <span>{isAr ? 'خريطة شبكة المونوريل التفاعلية' : 'Interactive Monorail Network Map'}</span>
             </div>
             <h1 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight">
               {isAr ? 'مسارات وسرعة خطوط المونوريل' : 'Monorail Routes & Station Planner'}
@@ -243,7 +243,7 @@ export default function MapPage({ onTicket }: Props) {
           </div>
         </div>
 
-        {/* فلاتر الخطوط البرتقالية والزرقاء */}
+        {/* فلاتر الخطوط */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 border-t border-slate-800/80 pt-4">
           <button
             onClick={() => setActiveLineFilter('all')}
@@ -378,7 +378,7 @@ export default function MapPage({ onTicket }: Props) {
               </g>
             )}
 
-            {/* محطات خط شرق النيل مائلة متبادلة بزاوية مريحة جداً تمنع التداخل 100% */}
+            {/* محطات خط شرق النيل */}
             {(stations as any[]).map((st: any, idx: number) => {
               const coord = EAST_COORDS[st.id] || { x: 70 + idx * 42, y: 200 };
               const isOrigin = originId === st.id;
@@ -517,7 +517,7 @@ export default function MapPage({ onTicket }: Props) {
           </svg>
         </div>
 
-        {/* أسفل الخريطة: الملاحظات والمحطة النشطة عند تمرير الماوس */}
+        {/* أسفل الخريطة: المحطة الحالية والمنطقة */}
         <div className="mt-3 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-800/80 gap-2">
           <span className="flex items-center gap-1.5">
             <InfoIcon />
@@ -525,8 +525,9 @@ export default function MapPage({ onTicket }: Props) {
           </span>
           {activeHoverStation && (
             <span className="text-cyan-400 font-bold bg-slate-950 px-3 py-1 rounded-full border border-cyan-500/30">
-              {isAr ? 'المحطة الحالية: ' : 'Hovered: '}
-              {getDisplayName(activeHoverStation, currentLang)}
+              {isAr ? 'المحطة: ' : 'Station: '}
+              {getDisplayName(activeHoverStation, currentLang)} 
+              {getDisplayArea(activeHoverStation, currentLang) ? ` (${getDisplayArea(activeHoverStation, currentLang)})` : ''}
             </span>
           )}
         </div>
