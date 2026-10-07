@@ -8,6 +8,13 @@ interface MapPageProps {
   onSelectStation?: (stationId: string) => void;
 }
 
+// Helpers for safe line handling (Station type in network.ts uses `lines: string[]`)
+const hasLine = (st: any, lineId: string): boolean => {
+  if (Array.isArray(st.lines)) return st.lines.includes(lineId);
+  if (st.line) return st.line === lineId;
+  return false;
+};
+
 export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
   const { lang } = useLanguage();
   
@@ -26,14 +33,14 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
   const westColor = colors['west-nile'] || '#0284C7';
 
   // East Line & West Line Station Arrays
-  const eastStations = useMemo(() => stations.filter((s) => s.line === 'east-nile'), []);
-  const westStations = useMemo(() => stations.filter((s) => s.line === 'west-nile'), []);
+  const eastStations = useMemo(() => stations.filter((s) => hasLine(s, 'east-nile')), []);
+  const westStations = useMemo(() => stations.filter((s) => hasLine(s, 'west-nile')), []);
 
   // Filtered station list for side menu search & line tab
   const displayedStations = useMemo(() => {
     let result = stations;
     if (selectedLine !== 'all') {
-      result = result.filter((s) => s.line === selectedLine);
+      result = result.filter((s) => hasLine(s, selectedLine));
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -381,13 +388,14 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
 
                   {/* Interactive Station Nodes Rendering */}
                   {stations.map((st) => {
-                    if (selectedLine !== 'all' && st.line !== selectedLine) return null;
+                    if (selectedLine !== 'all' && !hasLine(st, selectedLine)) return null;
                     const coords = stationCoordsMap[st.id];
                     if (!coords) return null;
 
                     const isSelected = selectedStationId === st.id;
                     const isHovered = hoveredStationId === st.id;
-                    const lineColor = st.line === 'east-nile' ? eastColor : westColor;
+                    const isEast = hasLine(st, 'east-nile');
+                    const lineColor = isEast ? eastColor : westColor;
                     const isInterchange = (st as any).isInterchange || ['st-1', 'st-10', 'st-24'].includes(st.id);
 
                     return (
@@ -475,7 +483,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                 <div className="flex items-center gap-3 w-full md:w-auto">
                   <div 
                     className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-slate-900 shadow-sm shrink-0"
-                    style={{ backgroundColor: selectedStation.line === 'east-nile' ? eastColor : westColor }}
+                    style={{ backgroundColor: hasLine(selectedStation, 'east-nile') ? eastColor : westColor }}
                   >
                     🚉
                   </div>
@@ -485,7 +493,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                         {getStationName(selectedStation.name, lang)}
                       </h4>
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                        {selectedStation.line === 'east-nile' ? 'الخط الشرقي' : 'الخط الغربي'}
+                        {hasLine(selectedStation, 'east-nile') ? 'الخط الشرقي' : 'الخط الغربي'}
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">
@@ -563,7 +571,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
               ) : (
                 displayedStations.map((st, idx) => {
                   const isSelected = selectedStationId === st.id;
-                  const isEast = st.line === 'east-nile';
+                  const isEast = hasLine(st, 'east-nile');
                   const badgeBg = isEast ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800';
 
                   return (
