@@ -9,10 +9,14 @@ import { num } from '../lib/format';
 const EXTRA_NEWS: string[] = [];
 
 export default function NewsTicker() {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const weather = useWeather();
   const east = lineMeta['east-nile'];
   const firstPhase = westNile.stations.filter((s) => s.phase === 1).length;
+
+  const lineName = lang === 'en' ? 'East Nile Line' : east.name;
+  const westName = lang === 'en' ? 'West Nile Line' : westNile.name;
+  const westStatus = lang === 'en' ? 'Under construction' : westNile.status;
 
   const fareText = fareZones
     .map((z) =>
@@ -27,19 +31,19 @@ export default function NewsTicker() {
       ? [
           t('news.weather', {
             temp: num(Math.round(weather.temp)),
-            label: weatherLabel(weather.code),
+            label: weatherLabel(weather.code, lang),
             feels: num(Math.round(weather.feelsLike)),
           }),
         ]
       : []),
-    t('news.line', { name: east.name, count: num(east.stationCount), km: num(east.lengthKm) }),
+    t('news.line', { name: lineName, count: num(east.stationCount), km: num(east.lengthKm) }),
     t('news.fares', { text: fareText }),
     t('news.hours', { hours: t('fares.operatingHours'), n: num(HEADWAY_MINUTES) }),
     t('news.west', {
-      name: westNile.name,
+      name: westName,
       count: num(westNile.stationCount),
       km: num(westNile.lengthKm),
-      status: westNile.status,
+      status: westStatus,
       first: num(firstPhase),
     }),
     t('news.interchange'),
