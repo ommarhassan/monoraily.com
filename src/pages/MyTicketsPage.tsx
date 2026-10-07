@@ -1,22 +1,37 @@
 import { useEffect, useState } from 'react';
 import Icon from '../components/Icon';
-import TicketQR from '../components/TicketQR';
 import { getStationName } from '../components/StationPicker';
-import { plans, type PlanId } from '../data/fares';
+import { farePlans, type PlanId } from '../data/fares';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { formatDate, formatTime, num } from '../lib/format';
-import {
-  isSubscriptionActive,
-  listSubscriptions,
-  listTickets,
-  type SavedSubscription,
-  type SavedTicket,
-} from '../lib/tickets';
+
+type SavedSubscription = {
+  id: string;
+  userId: string;
+  plan: PlanId;
+  zone: number;
+  holderName: string;
+  tripsLeft: number;
+  tripsTotal: number;
+  expiresAt: string;
+  payload: string;
+};
+
+type SavedTicket = {
+  id: string;
+  userId: string;
+  route: string;
+  fare: number;
+  kind: 'full' | 'half';
+  status: 'valid' | 'expired';
+  expiresAt: string;
+  payload: string;
+};
 
 type Props = { onPlan: () => void; justPaid?: string | null };
 
-const planNames: Record<PlanId, { ar: string; en: string }> = {
+const planNames: Record<string, { ar: string; en: string }> = {
   weekly: { ar: 'أسبوعي', en: 'Weekly' },
   monthly: { ar: 'شهري', en: 'Monthly' },
   quarterly: { ar: 'ربع سنوي', en: 'Quarterly' },
@@ -38,8 +53,14 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
 
   useEffect(() => {
     if (!user) return;
-    setSubs(listSubscriptions(user.id));
-    setTickets(listTickets(user.id));
+    try {
+      const rawSubs = localStorage.getItem(`monogo_subs_${user.id}`);
+      const rawTickets = localStorage.getItem(`monogo_tickets_${user.id}`);
+      if (rawSubs) setSubs(JSON.parse(rawSubs));
+      if (rawTickets) setTickets(JSON.parse(rawTickets));
+    } catch {
+      // ignore
+    }
   }, [user]);
 
   const justPaidSub = justPaid?.startsWith('SUB-') ? subs.find((s) => s.id === justPaid) : null;
@@ -75,7 +96,7 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
                 {t('tickets.subInfo', {
                   plan: planNames[justPaidSub.plan]?.[lang] || justPaidSub.plan,
                   zone: zoneNames[justPaidSub.zone]?.[lang] || justPaidSub.zone,
-                  trips: num(plans.find((p) => p.id === justPaidSub.plan)?.trips ?? 0, locale),
+                  trips: num(farePlans.find((p) => p.id === justPaidSub.plan)?.trips ?? 0, locale),
                 })}
               </p>
             </>
@@ -94,12 +115,12 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
           <div className="section-title-row">
             <div>
               <span className="eyebrow green">{isAr ? 'الاشتراكات' : 'Subscriptions'}</span>
-              <h2>{t('tickets.subsHeading')}</h2>
+              2>{t('tickets.subsHeading')}</h2>
             </div>
           </div>
           <div className="wallet-grid">
             {subs.map((s) => {
-              const active = isSubscriptionActive(s);
+              const active = new Date(s.expiresAt) > new Date() && s.tripsLeft > 0;
               const pName = planNames[s.plan]?.[lang] || s.plan;
               const zName = zoneNames[s.zone]?.[lang] || s.zone;
               const title = isAr ? `اشتراك ${pName} · ${zName}` : `${pName} subscription · ${zName}`;
@@ -110,8 +131,14 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
                     <span className={`status-pill ${active ? 'active' : 'expired'}`}>{statusTag}</span>
                     <span className="ticket-id">{s.id}</span>
                   </div>
-                  <div className="ticket-qr-wrap">
-                    <TicketQR payload={s.payload} alt={s.id} />
+                  <div className="ticket-qr-wrap" style={{ textAlign: 'center', padding: '12px' }}>
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(s.payload || s.id)}`}
+                      alt={s.id}
+                      width={160}
+                      height={160}
+                      style={{ borderRadius: '8px' }}
+                    />
                   </div>
                   <div className="ticket-body">
                     <h3>{title}</h3>
@@ -148,8 +175,14 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
                     <span className={`status-pill ${active ? 'active' : 'expired'}`}>{statusTag}</span>
                     <span className="ticket-id">{tItem.id}</span>
                   </div>
-                  <div className="ticket-qr-wrap">
-                    <TicketQR payload={tItem.payload} alt={tItem.id} />
+                  <div className="ticket-qr-wrap" style={{ textAlign: 'center', padding: '12px' }}>
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(tItem.payload || tItem.id)}`}
+                      alt={tItem.id}
+                      width={160}
+                      height={160}
+                      style={{ borderRadius: '8px' }}
+                    />
                   </div>
                   <div className="ticket-body">
                     <h3>{translateRoute(tItem.route)}</h3>
