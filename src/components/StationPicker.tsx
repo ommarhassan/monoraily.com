@@ -61,6 +61,13 @@ const stationTranslations: Record<string, string> = {
   'بشتيل': 'Bashtil',
   'وادي النيل': 'Wadi El Nil',
 
+  // Areas
+  'مدينة نصر': 'Nasr City',
+  'القاهرة الجديدة': 'New Cairo',
+  'العاصمة الإدارية': 'New Administrative Capital',
+  '6 أكتوبر': '6th of October',
+  'الشيخ زايد': 'Sheikh Zayed',
+
   // Interchanges & Future Lines
   'القطار الكهربائي الخفيف LRT': 'LRT Light Rail',
   'مترو الخط الثالث': 'Metro Line 3',
