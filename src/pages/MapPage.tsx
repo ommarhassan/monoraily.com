@@ -117,7 +117,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
             خريطة مونوريل القاهرة
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            خطان .. مدينة واحدة | استكشف شبكة خريطة المونوريل التفاعلية البسيطة والواقعية
+            خطان .. مدينة واحدة | الخريطة التفاعلية الأصلية البسيطة لشبكة المونوريل
           </p>
         </div>
 
@@ -384,13 +384,12 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                   </div>
                 </div>
 
-                {/* Optional Ticket Trigger */}
                 {onTicket && (
                   <button
                     onClick={() => onTicket(selectedStation.id, selectedStation.id)}
-                    className="text-xs text-amber-400 font-bold bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition"
+                    className="text-xs text-amber-400 font-bold bg-slate-800 hover:bg-slate-700 px-3.5 py-2 rounded-xl border border-slate-700 transition"
                   >
-                    محددة حالياً
+                    حجز تذكرة من هذه المحطة
                   </button>
                 )}
               </div>
