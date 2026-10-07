@@ -6,6 +6,7 @@ import { num } from '../lib/format';
 import type { Route } from '../lib/routing';
 import Icon from './Icon';
 import LineBadge from './LineBadge';
+import { getStationName } from './StationPicker';
 
 type Segment = { line: LineId; start: string; end: string; stops: number };
 
@@ -27,9 +28,9 @@ function toSegments(route: Route): Segment[] {
 type Props = { route: Route; onTicket: () => void };
 
 export default function RouteResult({ route, onTicket }: Props) {
-  const { t, locale } = useLanguage();
-  const from = route.names[0];
-  const to = route.names[route.names.length - 1];
+  const { t, lang, locale } = useLanguage();
+  const from = getStationName(route.names[0], lang);
+  const to = getStationName(route.names[route.names.length - 1], lang);
   const segments = toSegments(route);
   const halfFare = fareForStops(route.stops, 'half');
 
@@ -93,7 +94,7 @@ export default function RouteResult({ route, onTicket }: Props) {
                 <div className="transfer-row">
                   <span className="timeline-marker transfer" />
                   <div>
-                    <strong>{segment.end}</strong>
+                    <strong>{getStationName(segment.end, lang)}</strong>
                     <small>{t('route.transferTo', { line: lineNames[nextSegment.line] })}</small>
                   </div>
                   <span className="transfer-tag">{t('route.transfer')}</span>
