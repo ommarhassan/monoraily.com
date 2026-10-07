@@ -1,7 +1,6 @@
 import type { CSSProperties } from 'react';
 import Icon from '../components/Icon';
 import { getStationName } from '../components/StationPicker';
-import { operatingHours } from '../data/fares';
 import { lineColors, lineMeta, linePaths, plannedLines, stationById } from '../data/network';
 import { westNile, type PlannedStation } from '../data/westNile';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -25,7 +24,6 @@ function getAreaName(area: string, lang: string): string {
   return area;
 }
 
-/** Splits a line's stations into runs that share the same area (Nasr City, New Cairo, New Capital...). */
 function groupByArea(names: string[]) {
   const groups: { area: string; names: string[] }[] = [];
   for (const name of names) {
@@ -38,7 +36,7 @@ function groupByArea(names: string[]) {
 }
 
 export default function StationsPage() {
-  const { lang, locale } = useLanguage();
+  const { lang, locale, t } = useLanguage();
   const line = lineMeta['east-nile'];
   const path = linePaths.find((p) => p.line === 'east-nile')!;
   const groups = groupByArea(path.names);
@@ -96,7 +94,7 @@ export default function StationsPage() {
         </div>
         <div className="stat-card">
           <span>{isAr ? 'ساعات التشغيل' : 'Operating Hours'}</span>
-          <strong className="stat-small">{operatingHours}</strong>
+          <strong className="stat-small">{t('fares.operatingHours')}</strong>
         </div>
       </div>
 
@@ -141,7 +139,6 @@ export default function StationsPage() {
             </div>
           ))}
 
-          {/* West Nile: information only, no booking yet */}
           <div className="network-header">
             <div>
               <span className="eyebrow green">{isAr ? 'قريبًا' : 'Coming soon'}</span>
