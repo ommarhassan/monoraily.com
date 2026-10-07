@@ -16,7 +16,9 @@ const stationTranslations: Record<string, string> = {
   'زهراء مدينة نصر': 'Zahraa Nasr City',
   'الطريق الدائري': 'Ring Road',
   'المشير طنطاوي': 'El Mushir Tantawi',
-  'وان تاينتي': 'One Tane',
+  'المشير أحمد إسماعيل': 'El Mushir Ahmed Ismail',
+  'جيهان السادات': 'Gehan El-Sadat',
+  'وان نايتي': 'One Ninety',
   'وان تان': 'One Tane',
   'المستشفى الجوي': 'Air Force Hospital',
   'النرجس': 'El Narges',
@@ -61,10 +63,15 @@ const stationTranslations: Record<string, string> = {
   'القطار الكهربائي الخفيف LRT': 'LRT Light Rail',
   'مترو الخط الثالث': 'Metro Line 3',
   'مترو الخط الرابع (مستقبلاً)': 'Metro Line 4 (Future)',
+  'مترو الخط الرابع': 'Metro Line 4',
   'مترو الخط السادس (مستقبلاً)': 'Metro Line 6 (Future)',
+  'مترو الخط السادس': 'Metro Line 6',
   'القطار الكهربائي السريع (مستقبلاً)': 'High-Speed Rail (Future)',
+  'القطار الكهربائي السريع': 'High-Speed Rail',
   'محطة سكك حديد الصعيد': 'Upper Egypt Railway Station',
   'الأتوبيس الترددي BRT': 'BRT Bus Rapid Transit',
+  'خط شرق النيل': 'East Nile Line',
+  'خط غرب النيل': 'West Nile Line',
 };
 
 export function getStationName(name: string, lang: string): string {
