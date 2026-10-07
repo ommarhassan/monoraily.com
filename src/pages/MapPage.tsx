@@ -4,7 +4,7 @@ import { getStationName } from '../components/StationPicker';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface MapPageProps {
-  onTicket?: (originId: string, destinationId?: string) => void;
+  onTicket?: (originId: string, destinationId: string) => void;
   onSelectStation?: (stationId: string) => void;
 }
 
