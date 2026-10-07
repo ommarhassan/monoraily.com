@@ -124,7 +124,6 @@ const isInterchangeStation = (st: any): boolean => {
   return Boolean(st.isInterchange || st.interchange || st.transfer || ['st-1', 'st-10', 'st-24', 'w-5'].includes(st.id));
 };
 
-// دالة آمنة لاستخراج اسم المحطة بدون أخطاء Typescript
 const getDisplayName = (st: any, currentLang: 'ar' | 'en'): string => {
   if (!st) return '';
   if (typeof st.name === 'string') {
@@ -202,8 +201,12 @@ export default function MapPage({ onTicket }: Props) {
     });
   }, [searchQuery, activeLine, currentLang]);
 
-  const eastColor = lineColors['east-nile'] || '#0284c7';
-  const westColor = lineColors['west-nile'] || '#f59e0b';
+  // صياغة آمنة تمنع أي خطأ في Typescript عند الوصول لألوان الخطوط
+  const colorsMap = lineColors as Record<string, string>;
+  const metaMap = lineMeta as Record<string, any>;
+
+  const eastColor = colorsMap['east-nile'] || '#0284c7';
+  const westColor = colorsMap['west-nile'] || '#f59e0b';
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 space-y-6">
@@ -271,7 +274,7 @@ export default function MapPage({ onTicket }: Props) {
               }`}
             >
               <span className="w-2 h-2 rounded-full" style={{ background: eastColor }} />
-              {isAr ? lineMeta['east-nile']?.name || 'خط شرق النيل' : 'East Nile'}
+              {isAr ? metaMap['east-nile']?.name || 'خط شرق النيل' : 'East Nile'}
             </button>
             <button
               onClick={() => setActiveLine('west')}
@@ -280,7 +283,7 @@ export default function MapPage({ onTicket }: Props) {
               }`}
             >
               <span className="w-2 h-2 rounded-full" style={{ background: westColor }} />
-              {isAr ? lineMeta['west-nile']?.name || 'خط غرب النيل (6 أكتوبر)' : 'West Nile'}
+              {isAr ? metaMap['west-nile']?.name || 'خط غرب النيل (6 أكتوبر)' : 'West Nile'}
             </button>
             <button
               onClick={() => setActiveLine('interchange')}
