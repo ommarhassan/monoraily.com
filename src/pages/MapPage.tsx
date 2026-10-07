@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import Icon from '../components/Icon';
-import MapCanvas from '../components/MapCanvas';
 import { getStationName } from '../components/StationPicker';
-import { lineColors, lineMeta, stations } from '../data/network';
+import { lineColors, lineMeta, stations, type Station } from '../data/network';
 import { useLanguage } from '../i18n/LanguageContext';
 
 type Props = { onTicket?: (from: string, to: string) => void };
@@ -37,11 +36,53 @@ export default function MapPage({ onTicket }: Props) {
 
       <div className="map-page-layout">
         <div className="map-card-wrap">
-          <MapCanvas
-            selectedId={selectedStationId}
-            originId={originId}
-            onSelect={(st) => setSelectedStationId(st.id)}
-          />
+          <div className="interactive-map-container" style={{ padding: '24px', textAlign: 'center' }}>
+            <svg viewBox="0 0 800 400" style={{ width: '100%', height: 'auto', maxHeight: '420px' }}>
+              <path
+                d="M 100 100 C 250 50, 400 350, 600 100 C 650 40, 720 80, 700 150"
+                fill="none"
+                stroke={lineColors['east-nile']}
+                strokeWidth="7"
+                strokeLinecap="round"
+              />
+              <path
+                d="M 120 340 C 250 330, 320 250, 350 180"
+                fill="none"
+                stroke="#7b8794"
+                strokeWidth="5"
+                strokeDasharray="6,6"
+                strokeLinecap="round"
+              />
+
+              {stations.slice(0, 15).map((st: Station, i: number) => {
+                const cx = 100 + i * 42;
+                const cy = 100 + Math.sin(i * 0.5) * 60;
+                const isSelected = selectedStationId === st.id;
+                return (
+                  <g key={st.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedStationId(st.id)}>
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={isSelected ? '9' : '6'}
+                      fill={isSelected ? '#325586' : '#ffffff'}
+                      stroke={lineColors['east-nile']}
+                      strokeWidth="3"
+                    />
+                    <text
+                      x={cx}
+                      y={cy + 18}
+                      fontSize="10"
+                      fontWeight="600"
+                      textAnchor="middle"
+                      fill="#3a4b5c"
+                    >
+                      {getStationName(st.name, lang)}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
 
           <div className="map-legend-strip">
             <span className="legend-chip">
