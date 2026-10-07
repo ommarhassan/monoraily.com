@@ -20,7 +20,7 @@ import VerifyScreen from './pages/VerifyScreen';
 
 const CLOCK_TICK_MS = 30_000;
 /** Pages already translated to English. Any other page stays Arabic (rtl) even when English is selected. */
-const translatedPages: Page[] = ['home'];
+const translatedPages: Page[] = ['home', 'map', 'stations', 'fares', 'mytickets', 'gate', 'dashboard', 'verification', 'admin', 'auth'];
 
 function Shell() {
   const { user, loading, recovery, isAdmin, signOut } = useAuth();
@@ -152,8 +152,8 @@ function Shell() {
       />
       <NewsTicker />
       <main className="main-content" dir={translatedPages.includes(page) ? dir : 'rtl'}>
-  {renderPage()}
-</main>
+        {renderPage()}
+      </main>
 
       {ticketOpen && planner.route && (
         <TicketModal
