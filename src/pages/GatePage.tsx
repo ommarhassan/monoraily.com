@@ -1,11 +1,25 @@
 import { useState } from 'react';
 import Icon from '../components/Icon';
-import TicketQR from '../components/TicketQR';
 import { getStationName } from '../components/StationPicker';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { num } from '../lib/format';
-import { listSubscriptions, listTickets, type SavedSubscription, type SavedTicket } from '../lib/tickets';
+
+type SavedSubscription = {
+  id: string;
+  plan: string;
+  zone: number;
+  tripsLeft: number;
+  tripsTotal: number;
+  payload: string;
+};
+
+type SavedTicket = {
+  id: string;
+  route: string;
+  fare: number;
+  payload: string;
+};
 
 type Result = { ok: boolean; message: string };
 
@@ -28,8 +42,28 @@ export default function GatePage() {
   const [result, setResult] = useState<Result | null>(null);
   const isAr = lang === 'ar';
 
-  const subs: SavedSubscription[] = user ? listSubscriptions(user.id) : [];
-  const tickets: SavedTicket[] = user ? listTickets(user.id) : [];
+  const getSavedSubs = (): SavedSubscription[] => {
+    if (!user) return [];
+    try {
+      const raw = localStorage.getItem(`monogo_subs_${user.id}`);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const getSavedTickets = (): SavedTicket[] => {
+    if (!user) return [];
+    try {
+      const raw = localStorage.getItem(`monogo_tickets_${user.id}`);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const subs = getSavedSubs();
+  const tickets = getSavedTickets();
 
   const translateRoute = (routeText: string) => {
     if (!routeText.includes('←')) return getStationName(routeText, lang);
