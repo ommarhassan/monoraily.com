@@ -1,10 +1,22 @@
 import { lineColors, lineNames, type LineId } from '../data/network';
+import { useLanguage } from '../i18n/LanguageContext';
 
-export default function LineBadge({ line }: { line: LineId }) {
+type Props = { line: LineId };
+
+const lineNamesEn: Record<LineId, string> = {
+  'east-nile': 'East Nile Line',
+  'west-nile': 'West Nile Line',
+};
+
+export default function LineBadge({ line }: Props) {
+  const { lang } = useLanguage();
+  const color = lineColors[line];
+  const name = lang === 'en' ? lineNamesEn[line] || lineNames[line] : lineNames[line];
+
   return (
-    <span className="line-badge" style={{ color: lineColors[line], backgroundColor: `${lineColors[line]}18` }}>
-      <span style={{ backgroundColor: lineColors[line] }} />
-      {lineNames[line]}
+    <span className="line-badge" style={{ '--line-color': color } as React.CSSProperties}>
+      <span className="line-dot" />
+      {name}
     </span>
   );
 }
