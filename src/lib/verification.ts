@@ -1,3 +1,4 @@
+import type { TextKey } from '../i18n/dictionary';
 import { supabase } from './supabase';
 
 export type VerificationCategory = 'senior' | 'disabled';
@@ -74,23 +75,31 @@ export async function myVerification(): Promise<MyVerification> {
   return { category: null, until: null, latest: latestRequest };
 }
 
-export type SubmitResult = { ok: boolean; error?: string };
+/**
+ * `error` is the Arabic text (kept for older callers such as the admin page);
+ * `errorKey` lets the page show the same message in the selected language.
+ */
+export type SubmitResult = { ok: boolean; error?: string; errorKey?: TextKey };
 
 /** Uploads the ID document to the private bucket and opens a pending request. */
 export async function submitVerification(file: File, category: VerificationCategory): Promise<SubmitResult> {
   const userId = await currentUserId();
-  if (!supabase || !userId) return { ok: false, error: 'سجّل دخول الأول' };
-  if (!EXT[file.type]) return { ok: false, error: 'الملف لازم يكون صورة (JPG أو PNG أو WEBP) أو PDF' };
-  if (file.size > MAX_DOC_BYTES) return { ok: false, error: 'الملف أكبر من 5 ميجا' };
+  if (!supabase || !userId) return { ok: false, error: 'سجّل دخول الأول', errorKey: 'errSignInFirst' };
+  if (!EXT[file.type]) {
+    return { ok: false, error: 'الملف لازم يكون صورة (JPG أو PNG أو WEBP) أو PDF', errorKey: 'errFileType' };
+  }
+  if (file.size > MAX_DOC_BYTES) return { ok: false, error: 'الملف أكبر من 5 ميجا', errorKey: 'errFileSize' };
 
   const current = await myVerification();
-  if (current.latest?.status === 'pending') return { ok: false, error: 'عندك طلب قيد المراجعة بالفعل' };
+  if (current.latest?.status === 'pending') {
+    return { ok: false, error: 'عندك طلب قيد المراجعة بالفعل', errorKey: 'errPendingExists' };
+  }
 
   const path = `${userId}/${crypto.randomUUID()}.${EXT[file.type]}`;
   const upload = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false });
   if (upload.error) {
     console.error('verification upload failed', upload.error.message);
-    return { ok: false, error: 'مقدرناش نرفع الملف، جرّب تاني' };
+    return { ok: false, error: 'مقدرناش نرفع الملف، جرّب تاني', errorKey: 'errUpload' };
   }
 
   const insert = await supabase
@@ -99,7 +108,7 @@ export async function submitVerification(file: File, category: VerificationCateg
   if (insert.error) {
     console.error('verification request failed', insert.error.message);
     await supabase.storage.from(BUCKET).remove([path]);
-    return { ok: false, error: 'مقدرناش نسجّل الطلب، جرّب تاني' };
+    return { ok: false, error: 'مقدرناش نسجّل الطلب، جرّب تاني', errorKey: 'errRequest' };
   }
   return { ok: true };
 }
@@ -142,11 +151,11 @@ export async function documentUrl(path: string): Promise<string | null> {
 
 /** Approve or reject a request. The database function checks that the caller is an admin. */
 export async function reviewRequest(id: string, approve: boolean): Promise<SubmitResult> {
-  if (!supabase) return { ok: false, error: 'السيرفر مش متصل' };
+  if (!supabase) return { ok: false, error: 'السيرفر مش متصل', errorKey: 'errServer' };
   const { error } = await supabase.rpc('review_verification', { p_id: id, p_approve: approve });
   if (error) {
     console.error('reviewRequest failed', error.message);
-    return { ok: false, error: 'العملية فشلت' };
+    return { ok: false, error: 'العملية فشلت', errorKey: 'errOperation' };
   }
   return { ok: true };
 }
