@@ -2,6 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { setFormatLocale } from '../lib/format';
 import { dictionary, type Lang, type TextKey } from './dictionary';
 
+// Re-exported so files that used to import these types from here keep compiling.
+export type { Lang, TextKey };
+
 const STORAGE_KEY = 'monoraily-lang';
 
 type Vars = Record<string, string | number>;
@@ -11,7 +14,8 @@ type LanguageValue = {
   dir: 'rtl' | 'ltr';
   /** Locale for Intl formatters. */
   locale: string;
-  t: (key: TextKey, vars?: Vars) => string;
+  /** Accepts any key: a missing one falls back to Arabic, then to the key itself. */
+  t: (key: string, vars?: Vars) => string;
   toggleLang: () => void;
 };
 
@@ -25,6 +29,13 @@ function initialLang(): Lang {
     // storage can be blocked: fall back to Arabic
   }
   return 'ar';
+}
+
+function translate(lang: Lang, key: string, vars?: Vars): string {
+  const table = dictionary[lang] as Record<string, string>;
+  const fallback = dictionary.ar as Record<string, string>;
+  const text = table[key] ?? fallback[key] ?? key;
+  return vars ? text.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? '')) : text;
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -50,10 +61,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       lang,
       dir: lang === 'ar' ? 'rtl' : 'ltr',
       locale: lang === 'ar' ? 'ar-EG' : 'en-GB',
-      t: (key, vars) => {
-        const text = dictionary[lang][key];
-        return vars ? text.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? '')) : text;
-      },
+      t: (key, vars) => translate(lang, key, vars),
       toggleLang,
     }),
     [lang, toggleLang],
