@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { stations, lineColors, lineMeta } from '../data/network';
 import { getStationName } from '../components/StationPicker';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface MapPageProps {
   onTicket?: (originId: string, destinationId?: string) => void;
@@ -505,7 +505,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                 {/* Ticket Booking CTA */}
                 {onTicket && (
                   <button
-                    onClick={() => onTicket(selectedStation.id)}
+                    onClick={() => onTicket(selectedStation.id, selectedStation.id)}
                     className="w-full md:w-auto px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-950 text-xs font-extrabold rounded-xl transition shadow-sm flex items-center justify-center gap-2 shrink-0"
                   >
                     <span>🎟️ حجز تذكرة من هذه المحطة</span>
