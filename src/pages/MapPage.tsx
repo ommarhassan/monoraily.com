@@ -1,18 +1,4 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  MapPin, 
-  Train, 
-  Zap, 
-  Search, 
-  Info, 
-  Sparkles, 
-  CheckCircle2, 
-  ArrowRight, 
-  Clock, 
-  Compass, 
-  RotateCcw,
-  Ticket
-} from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getStationName } from '../components/StationPicker';
 import { lineColors, lineMeta, stations } from '../data/network';
@@ -21,7 +7,86 @@ type Props = {
   onTicket?: (from: string, to: string) => void 
 };
 
-// مسار المنحنى المايل والانسيابي للشبكة (S-Curved Bezier Path)
+// أيقونات SVG خفيفة ومدمجة ومستقلة بدون أي مكتبات خارجية
+const SparklesIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4m6 0v4m-2-2h4m5 4v4m-2-2h4M6 17v4m-2-2h4m5 4v4m-2-2h4M17 3v4m-2-2h4" />
+  </svg>
+);
+
+const CompassIcon = ({ className = "w-8 h-8" }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <circle cx="12" cy="12" r="10" />
+    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+  </svg>
+);
+
+const SearchIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+  </svg>
+);
+
+const ZapIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+  </svg>
+);
+
+const RotateCcwIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+  </svg>
+);
+
+const TrainIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <rect x="4" y="3" width="16" height="13" rx="2" />
+    <path d="M4 11h16M12 3v8M8 8h.01M16 8h.01M6 19l-2 2M18 19l2 2" />
+  </svg>
+);
+
+const InfoIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
+
+const CheckCircleIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const MapPinIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+
+const TicketIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+  </svg>
+);
+
+const ArrowRightIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+  </svg>
+);
+
+const ClockIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <circle cx="12" cy="12" r="10" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
+  </svg>
+);
+
+// مسار المنحنى المايل للانسيابي للشبكة (S-Curved Bezier Path)
 const TRACK_PATH = "M 60,140 C 140,80 240,110 320,200 C 400,290 480,280 540,210 C 600,140 660,150 720,230 C 770,300 810,360 870,370 C 910,375 940,390 970,400";
 
 // إحداثيات الـ 27 محطة موزعة بدقة على طول الخط المايل
@@ -57,15 +122,15 @@ const EAST_COORDS: Record<string, { x: number; y: number }> = {
 
 const WEST_LINK_PATH = "M 200,440 C 260,380 310,310 355,232";
 
-// دالة آمنة لفحص المحطات التبادلية متوافقة 100% مع TypeScript
+// دالة آمنة لفحص المحطات التبادلية
 const isInterchangeStation = (st: any): boolean => {
   if (!st) return false;
   return Boolean(st.isInterchange || st.interchange || st.transfer || ['st-1', 'st-10', 'st-24'].includes(st.id));
 };
 
 export default function MapPage({ onTicket }: Props) {
-  const { lang, language } = useLanguage();
-  const currentLang = (lang || language || 'ar') as 'ar' | 'en';
+  const { lang } = useLanguage();
+  const currentLang = (lang || 'ar') as 'ar' | 'en';
   const isAr = currentLang === 'ar';
 
   const [selectedStationId, setSelectedStationId] = useState<string | null>('st-1');
@@ -116,11 +181,11 @@ export default function MapPage({ onTicket }: Props) {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              <SparklesIcon className="w-3.5 h-3.5 animate-pulse" />
               <span>{isAr ? 'الخريطة التفاعلية المستقبلية 2026' : 'Futuristic Monorail Map 2026'}</span>
             </div>
             <h1 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3">
-              <Compass className="w-8 h-8 text-cyan-400 animate-spin-slow" />
+              <CompassIcon className="w-8 h-8 text-cyan-400 animate-spin-slow" />
               {isAr ? 'مركز التحكم في شبكة المونوريل' : 'Monorail Network Control'}
             </h1>
             <p className="text-slate-400 text-sm md:text-base max-w-2xl">
@@ -150,7 +215,7 @@ export default function MapPage({ onTicket }: Props) {
         {/* Search & Filter Bar */}
         <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-800/80">
           <div className="relative w-full md:w-80">
-            <Search className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400`} />
+            <SearchIcon className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400`} />
             <input
               type="text"
               value={searchQuery}
@@ -179,7 +244,7 @@ export default function MapPage({ onTicket }: Props) {
                   : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
               }`}
             >
-              <Zap className="w-3.5 h-3.5" />
+              <ZapIcon className="w-3.5 h-3.5" />
               {isAr ? 'المحطات التبادلية' : 'Interchanges'}
             </button>
             <button
@@ -191,7 +256,7 @@ export default function MapPage({ onTicket }: Props) {
               className="px-3 py-2 rounded-xl text-xs text-slate-400 hover:text-white bg-slate-800/40 hover:bg-slate-800 transition-all flex items-center gap-1"
               title={isAr ? 'إعادة الضبط' : 'Reset View'}
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcwIcon className="w-3.5 h-3.5" />
               <span>{isAr ? 'إعادة ضبط' : 'Reset'}</span>
             </button>
           </div>
@@ -326,7 +391,7 @@ export default function MapPage({ onTicket }: Props) {
                 <circle r="11" fill="#0369a1" stroke="#38bdf8" strokeWidth="2" />
                 <foreignObject x="-8" y="-8" width="16" height="16">
                   <div className="w-full h-full flex items-center justify-center text-cyan-200">
-                    <Train className="w-3.5 h-3.5 transform -rotate-90" />
+                    <TrainIcon className="w-3.5 h-3.5 transform -rotate-90" />
                   </div>
                 </foreignObject>
               </g>
@@ -423,7 +488,7 @@ export default function MapPage({ onTicket }: Props) {
 
           <div className="mt-4 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-800">
             <span className="flex items-center gap-1.5">
-              <Info className="w-4 h-4 text-cyan-400" />
+              <InfoIcon className="w-4 h-4 text-cyan-400" />
               {isAr ? 'انقر على أي محطة لعرض التفاصيل وحجز الرحلة.' : 'Click any station to view details and plan routes.'}
             </span>
             <span className="text-slate-400 font-medium">
@@ -451,7 +516,7 @@ export default function MapPage({ onTicket }: Props) {
 
                 {isInterchangeStation(activeStation) && (
                   <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400" title={isAr ? 'محطة تبادلية' : 'Transfer Hub'}>
-                    <Zap className="w-5 h-5" />
+                    <ZapIcon className="w-5 h-5" />
                   </div>
                 )}
               </div>
@@ -469,7 +534,7 @@ export default function MapPage({ onTicket }: Props) {
                     isAr ? 'كاميرات أمان' : '24/7 Security'
                   ].map((facility, i) => (
                     <div key={i} className="flex items-center gap-1.5 text-xs text-slate-300 bg-slate-950/40 px-2.5 py-1.5 rounded-lg border border-slate-800">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                       <span className="truncate">{facility}</span>
                     </div>
                   ))}
@@ -486,7 +551,7 @@ export default function MapPage({ onTicket }: Props) {
                       : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
                   }`}
                 >
-                  <MapPin className="w-3.5 h-3.5" />
+                  <MapPinIcon className="w-3.5 h-3.5" />
                   <span>
                     {originId === activeStation.id 
                       ? (isAr ? 'محطة البداية المحددة' : 'Selected Departure') 
@@ -499,7 +564,7 @@ export default function MapPage({ onTicket }: Props) {
                     onClick={() => onTicket(originStation.id, selectedStation.id)}
                     className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20"
                   >
-                    <Ticket className="w-4 h-4" />
+                    <TicketIcon className="w-4 h-4" />
                     <span>{isAr ? 'احجز التذكرة لهذه الرحلة' : 'Book Ticket for this Route'}</span>
                   </button>
                 )}
@@ -515,12 +580,12 @@ export default function MapPage({ onTicket }: Props) {
               </div>
               <div className="flex items-center justify-between text-sm text-white font-semibold">
                 <span className="text-emerald-400">{getStationName(originStation.name, currentLang)}</span>
-                <ArrowRight className={`w-4 h-4 text-cyan-400 ${isAr ? 'rotate-180' : ''}`} />
+                <ArrowRightIcon className={`w-4 h-4 text-cyan-400 ${isAr ? 'rotate-180' : ''}`} />
                 <span className="text-rose-400">{getStationName(selectedStation.name, currentLang)}</span>
               </div>
               <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
                 <span className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                  <ClockIcon className="w-3.5 h-3.5 text-cyan-400" />
                   {isAr ? 'الزمن المقدر: ~30 دقيقة' : 'Est. Time: ~30 mins'}
                 </span>
                 <span className="text-cyan-300 font-bold">
