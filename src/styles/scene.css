@@ -7,6 +7,14 @@
   overflow: hidden;
 }
 
+[dir="ltr"] .hero-scene {
+  inset: 0 0 0 43%;
+}
+
+[dir="rtl"] .hero-scene {
+  inset: 0 43% 0 0;
+}
+
 .hero-scene svg {
   display: block;
   width: 100%;
@@ -18,6 +26,14 @@
   content: '';
   position: absolute;
   inset: 0;
+  background: linear-gradient(90deg, rgba(23, 31, 62, 0.03), rgba(23, 31, 62, 0.14) 45%, var(--brand-deep) 98%);
+}
+
+[dir="ltr"] .hero-scene::after {
+  background: linear-gradient(270deg, rgba(23, 31, 62, 0.03), rgba(23, 31, 62, 0.14) 45%, var(--brand-deep) 98%);
+}
+
+[dir="rtl"] .hero-scene::after {
   background: linear-gradient(90deg, rgba(23, 31, 62, 0.03), rgba(23, 31, 62, 0.14) 45%, var(--brand-deep) 98%);
 }
 
@@ -68,18 +84,14 @@
 }
 
 @media (max-width: 1180px) {
-  .hero-scene {
-    inset: 0 48% 0 0;
-  }
+  [dir="rtl"] .hero-scene { inset: 0 48% 0 0; }
+  [dir="ltr"] .hero-scene { inset: 0 0 0 48%; }
 }
 @media (max-width: 950px) {
-  .hero-scene {
-    inset: 0 40% 0 0;
-  }
+  [dir="rtl"] .hero-scene { inset: 0 40% 0 0; }
+  [dir="ltr"] .hero-scene { inset: 0 0 0 40%; }
 }
 @media (max-width: 720px) {
-  .hero-scene {
-    inset: 0 35% 0 0;
-    opacity: 0.55;
-  }
+  [dir="rtl"] .hero-scene { inset: 0 35% 0 0; opacity: 0.55; }
+  [dir="ltr"] .hero-scene { inset: 0 0 0 35%; opacity: 0.55; }
 }
