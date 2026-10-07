@@ -6,8 +6,21 @@ export type Weather = { temp: number; feelsLike: number; code: number; wind: num
 const CAIRO = { lat: 30.0444, lng: 31.2357 };
 const REFRESH_MS = 10 * 60 * 1000;
 
-/** Arabic label for a WMO weather code. */
-export function weatherLabel(code: number): string {
+/** Label for a WMO weather code. */
+export function weatherLabel(code: number, lang: string = 'ar'): string {
+  if (lang === 'en') {
+    if (code === 0) return 'Clear';
+    if (code === 1) return 'Mostly clear';
+    if (code === 2) return 'Partly cloudy';
+    if (code === 3) return 'Overcast';
+    if (code === 45 || code === 48) return 'Fog';
+    if (code >= 51 && code <= 57) return 'Drizzle';
+    if (code >= 61 && code <= 67) return 'Rain';
+    if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'Snow';
+    if (code >= 80 && code <= 82) return 'Rain showers';
+    if (code >= 95) return 'Thunderstorm';
+    return 'Variable weather';
+  }
   if (code === 0) return 'صافي';
   if (code === 1) return 'غالبًا صافي';
   if (code === 2) return 'غيوم متفرقة';
