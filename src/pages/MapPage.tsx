@@ -124,6 +124,29 @@ const isInterchangeStation = (st: any): boolean => {
   return Boolean(st.isInterchange || st.interchange || st.transfer || ['st-1', 'st-10', 'st-24', 'w-5'].includes(st.id));
 };
 
+// دالة آمنة لاستخراج اسم المحطة بدون أخطاء Typescript
+const getDisplayName = (st: any, currentLang: 'ar' | 'en'): string => {
+  if (!st) return '';
+  if (typeof st.name === 'string') {
+    return getStationName(st.name, currentLang);
+  }
+  if (st.name && typeof st.name === 'object') {
+    return currentLang === 'ar' ? (st.name.ar || st.name.en || '') : (st.name.en || st.name.ar || '');
+  }
+  return String(st.id || '');
+};
+
+const getDisplayArea = (st: any, currentLang: 'ar' | 'en'): string => {
+  if (!st) return '';
+  if (typeof st.area === 'string') {
+    return getStationName(st.area, currentLang);
+  }
+  if (st.area && typeof st.area === 'object') {
+    return currentLang === 'ar' ? (st.area.ar || st.area.en || '') : (st.area.en || st.area.ar || '');
+  }
+  return '';
+};
+
 export default function MapPage({ onTicket }: Props) {
   const { lang } = useLanguage();
   const currentLang = (lang || 'ar') as 'ar' | 'en';
@@ -135,7 +158,7 @@ export default function MapPage({ onTicket }: Props) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // دمج كل المحطات الشرقية والغربية
+  // دمج المحطات
   const allNetworkStations = useMemo(() => {
     const east = (stations as any[]).map(s => ({ ...s, line: 'east' }));
     const west = WEST_STATIONS.map(w => ({ ...w, line: 'west' }));
@@ -161,7 +184,7 @@ export default function MapPage({ onTicket }: Props) {
 
   const filteredEastStations = useMemo(() => {
     return (stations as any[]).filter((st) => {
-      const name = getStationName(st.name, currentLang);
+      const name = getDisplayName(st, currentLang);
       const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
       if (activeLine === 'west') return false;
       if (activeLine === 'interchange') return matchesSearch && isInterchangeStation(st);
@@ -171,13 +194,13 @@ export default function MapPage({ onTicket }: Props) {
 
   const filteredWestStations = useMemo(() => {
     return WEST_STATIONS.filter((st) => {
-      const name = isAr ? st.name.ar : st.name.en;
+      const name = getDisplayName(st, currentLang);
       const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
       if (activeLine === 'east') return false;
       if (activeLine === 'interchange') return matchesSearch && isInterchangeStation(st);
       return matchesSearch;
     });
-  }, [searchQuery, activeLine, isAr]);
+  }, [searchQuery, activeLine, currentLang]);
 
   const eastColor = lineColors['east-nile'] || '#0284c7';
   const westColor = lineColors['west-nile'] || '#f59e0b';
@@ -377,14 +400,14 @@ export default function MapPage({ onTicket }: Props) {
                 </g>
               )}
 
-              {/* EAST NILE STATIONS (تأتي 100% فوق المنحنى بالضبط) */}
+              {/* EAST NILE STATIONS (تقع 100% فوق المنحنى بالضبط) */}
               {(stations as any[]).map((st: any) => {
                 const coord = EAST_COORDS[st.id] || { x: 70, y: 140 };
                 const isSelected = selectedStationId === st.id;
                 const isHovered = hoveredId === st.id;
                 const isOrigin = originId === st.id;
                 const isMatchingFilter = filteredEastStations.some((s) => s.id === st.id);
-                const displayName = getStationName(st.name, currentLang);
+                const displayName = getDisplayName(st, currentLang);
                 const isInterchange = isInterchangeStation(st);
 
                 const textAngle = -42;
@@ -458,7 +481,7 @@ export default function MapPage({ onTicket }: Props) {
                 const isHovered = hoveredId === st.id;
                 const isOrigin = originId === st.id;
                 const isMatchingFilter = filteredWestStations.some((s) => s.id === st.id);
-                const displayName = isAr ? st.name.ar : st.name.en;
+                const displayName = getDisplayName(st, currentLang);
 
                 const textAngle = -35;
                 const textX = st.x + 3;
@@ -531,10 +554,10 @@ export default function MapPage({ onTicket }: Props) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
-                    {activeStation.area ? getStationName(activeStation.area, currentLang) : (isAr ? 'خط غرب النيل' : 'West Nile Line')}
+                    {getDisplayArea(activeStation, currentLang) || (isAr ? 'خط غرب النيل' : 'West Nile Line')}
                   </span>
                   <h2 className="text-xl font-bold text-white mt-1">
-                    {activeStation.name ? getStationName(activeStation.name, currentLang) : (isAr ? activeStation.name?.ar : activeStation.name?.en)}
+                    {getDisplayName(activeStation, currentLang)}
                   </h2>
                 </div>
 
@@ -602,11 +625,11 @@ export default function MapPage({ onTicket }: Props) {
               </div>
               <div className="flex items-center justify-between text-sm text-white font-semibold">
                 <span className="text-emerald-400">
-                  {originStation.name ? getStationName(originStation.name, currentLang) : (isAr ? originStation.name?.ar : originStation.name?.en)}
+                  {getDisplayName(originStation, currentLang)}
                 </span>
                 <ArrowRightIcon className={`w-4 h-4 text-cyan-400 ${isAr ? 'rotate-180' : ''}`} />
                 <span className="text-rose-400">
-                  {selectedStation.name ? getStationName(selectedStation.name, currentLang) : (isAr ? selectedStation.name?.ar : selectedStation.name?.en)}
+                  {getDisplayName(selectedStation, currentLang)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
