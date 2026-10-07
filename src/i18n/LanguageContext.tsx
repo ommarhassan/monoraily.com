@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { setFormatLocale } from '../lib/format';
 import { ar, type Key } from './ar';
 import { en } from './en';
 
@@ -46,6 +47,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    setFormatLocale(lang);
     try {
       localStorage.setItem(STORAGE_KEY, lang);
     } catch {
