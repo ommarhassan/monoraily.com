@@ -1,97 +1,55 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../auth/AuthContext';
 import Icon from '../components/Icon';
+import TicketQR from '../components/TicketQR';
 import { getStationName } from '../components/StationPicker';
-import { ticketKindLabels } from '../data/fares';
+import { plans, type PlanId } from '../data/fares';
+import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
-import { mySubscriptions, myTickets } from '../lib/db';
-import { formatTime, num } from '../lib/format';
-import { configured } from '../lib/supabase';
+import { formatDate, formatTime, num } from '../lib/format';
 import {
-  loadTickets,
-  qrImage,
-  statusText,
-  subFromRow,
-  subStatus,
-  subStatusText,
-  ticketFromRow,
-  ticketStatus,
-  tripsLeft,
-  type SubPass,
-  type Ticket,
-} from '../lib/ticketing';
+  isSubscriptionActive,
+  listSubscriptions,
+  listTickets,
+  type SavedSubscription,
+  type SavedTicket,
+} from '../lib/tickets';
 
-const POLL_MS = 2000;
-const POLL_MAX_ATTEMPTS = 10;
+type Props = { onPlan: () => void; justPaid?: string | null };
 
-export default function MyTicketsPage({ onPlan, justPaid }: { onPlan: () => void; justPaid?: string | null }) {
-  const { t, locale, lang } = useLanguage();
+const planNames: Record<PlanId, { ar: string; en: string }> = {
+  weekly: { ar: 'أسبوعي', en: 'Weekly' },
+  monthly: { ar: 'شهري', en: 'Monthly' },
+  quarterly: { ar: 'ربع سنوي', en: 'Quarterly' },
+};
+
+const zoneNames: Record<number, { ar: string; en: string }> = {
+  0: { ar: 'منطقة واحدة', en: 'One zone' },
+  1: { ar: 'منطقتان', en: 'Two zones' },
+  2: { ar: 'ثلاث مناطق', en: 'Three zones' },
+  3: { ar: 'أربع مناطق', en: 'Four zones' },
+};
+
+export default function MyTicketsPage({ onPlan, justPaid }: Props) {
   const { user } = useAuth();
-  const [tickets, setTickets] = useState<Ticket[]>(() => (configured ? [] : loadTickets()));
-  const [subs, setSubs] = useState<SubPass[]>([]);
-  const [loading, setLoading] = useState(configured);
-  const [waiting, setWaiting] = useState(false);
-  const [qrs, setQrs] = useState<Record<string, string>>({});
-
-  // Load the tickets and subscriptions from Supabase. After a payment, keep polling for a few seconds
-  // because the webhook may arrive a moment after the customer is redirected back.
-  useEffect(() => {
-    if (!configured) return;
-    let cancelled = false;
-    let attempts = 0;
-    let timer: number | undefined;
-
-    const load = async () => {
-      const [rows, subRows] = await Promise.all([myTickets(), mySubscriptions()]);
-      const [list, subList] = await Promise.all([
-        Promise.all(rows.map(ticketFromRow)),
-        Promise.all(subRows.map(subFromRow)),
-      ]);
-      if (cancelled) return;
-      setTickets(list);
-      setSubs(subList);
-      setLoading(false);
-
-      const found = !justPaid || list.some((t) => t.id === justPaid) || subList.some((s) => s.id === justPaid);
-      attempts += 1;
-      if (found || attempts >= POLL_MAX_ATTEMPTS) {
-        setWaiting(false);
-        return;
-      }
-      setWaiting(true);
-      timer = window.setTimeout(load, POLL_MS);
-    };
-
-    void load();
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [user?.id, justPaid]);
+  const { lang, locale, t } = useLanguage();
+  const [subs, setSubs] = useState<SavedSubscription[]>([]);
+  const [tickets, setTickets] = useState<SavedTicket[]>([]);
+  const isAr = lang === 'ar';
 
   useEffect(() => {
-    tickets.forEach(async (ticket) => {
-      const url = await qrImage(ticket.token);
-      setQrs((current) => ({ ...current, [ticket.id]: url }));
-    });
-  }, [tickets]);
+    if (!user) return;
+    setSubs(listSubscriptions(user.id));
+    setTickets(listTickets(user.id));
+  }, [user]);
 
-  useEffect(() => {
-    subs.forEach(async (sub) => {
-      if (!sub.token) return;
-      const url = await qrImage(sub.token);
-      setQrs((current) => ({ ...current, [sub.id]: url }));
-    });
-  }, [subs]);
+  const justPaidSub = justPaid?.startsWith('SUB-') ? subs.find((s) => s.id === justPaid) : null;
+  const justPaidTicket = justPaid?.startsWith('MN-') || justPaid?.startsWith('PAY-') ? tickets.find((t) => t.id === justPaid) : null;
 
-  const paidTicket = justPaid ? tickets.find((t) => t.id === justPaid) : undefined;
-  const paidSub = justPaid ? subs.find((s) => s.id === justPaid) : undefined;
-  const paymentLate = Boolean(justPaid) && !paidTicket && !paidSub && !waiting && !loading;
-
-  const planName = (plan: string) => t(`plan.${plan}` as any) || plan;
-  const zoneName = (zone: number) => t(`zone.${zone}.short`);
-
-  const isEmpty = tickets.length === 0 && subs.length === 0;
+  const translateRoute = (routeText: string) => {
+    if (!routeText.includes('←')) return getStationName(routeText, lang);
+    const [from, to] = routeText.split('←').map((s) => s.trim());
+    return `${getStationName(from, lang)} ← ${getStationName(to, lang)}`;
+  };
 
   return (
     <div className="subpage">
@@ -101,48 +59,115 @@ export default function MyTicketsPage({ onPlan, justPaid }: { onPlan: () => void
         <p>{t('tickets.intro')}</p>
       </div>
 
-      {paidTicket && (
-        <div className="result-card" role="status">
+      {justPaid && (
+        <div className="paid-banner">
           <span className="eyebrow green">{t('tickets.paidEyebrow')}</span>
-          <h3>{t('tickets.ticketReady')}</h3>
-          <p>
-            {t('tickets.ticketInfo', {
-              route: `${getStationName(paidTicket.from, lang)} ← ${getStationName(paidTicket.to, lang)}`,
-              id: paidTicket.id,
-            })}
-          </p>
-        </div>
-      )}
-      {paidSub && (
-        <div className="result-card" role="status">
-          <span className="eyebrow green">{t('tickets.paidEyebrow')}</span>
-          <h3>{t('tickets.subActivated')}</h3>
-          <p>
-            {t('tickets.subInfo', {
-              plan: planName(paidSub.plan),
-              zone: zoneName(paidSub.zone),
-              trips: num(paidSub.tripsTotal, locale),
-            })}
-          </p>
-        </div>
-      )}
-      {waiting && (
-        <div className="result-card" role="status">
-          <span className="eyebrow green">{t('tickets.waitEyebrow')}</span>
-          <h3>{t('tickets.waitTitle')}</h3>
-          <p>{t('tickets.waitText')}</p>
-        </div>
-      )}
-      {paymentLate && (
-        <div className="result-card" role="status">
-          <h3>{t('tickets.lateTitle')}</h3>
-          <p>{t('tickets.lateText')}</p>
+          {justPaidTicket && (
+            <>
+              <h3>{t('tickets.ticketReady')}</h3>
+              <p>{t('tickets.ticketInfo', { route: translateRoute(justPaidTicket.route), id: justPaidTicket.id })}</p>
+            </>
+          )}
+          {justPaidSub && (
+            <>
+              <h3>{t('tickets.subActivated')}</h3>
+              <p>
+                {t('tickets.subInfo', {
+                  plan: planNames[justPaidSub.plan]?.[lang] || justPaidSub.plan,
+                  zone: zoneNames[justPaidSub.zone]?.[lang] || justPaidSub.zone,
+                  trips: num(plans.find((p) => p.id === justPaidSub.plan)?.trips ?? 0, locale),
+                })}
+              </p>
+            </>
+          )}
+          {!justPaidTicket && !justPaidSub && (
+            <>
+              <h3>{t('tickets.waitTitle')}</h3>
+              <p>{t('tickets.lateText')}</p>
+            </>
+          )}
         </div>
       )}
 
-      {loading ? (
-        <p className="auth-sub">{t('common.loading')}</p>
-      ) : isEmpty ? (
+      {subs.length > 0 && (
+        <div className="wallet-section">
+          <div className="section-title-row">
+            <div>
+              <span className="eyebrow green">{isAr ? 'الاشتراكات' : 'Subscriptions'}</span>
+              <h2>{t('tickets.subsHeading')}</h2>
+            </div>
+          </div>
+          <div className="wallet-grid">
+            {subs.map((s) => {
+              const active = isSubscriptionActive(s);
+              const pName = planNames[s.plan]?.[lang] || s.plan;
+              const zName = zoneNames[s.zone]?.[lang] || s.zone;
+              const title = isAr ? `اشتراك ${pName} · ${zName}` : `${pName} subscription · ${zName}`;
+              const statusTag = active ? (isAr ? 'نشط' : 'Active') : (isAr ? 'منتهي' : 'Expired');
+              return (
+                <div className="ticket-card" key={s.id}>
+                  <div className="ticket-head">
+                    <span className={`status-pill ${active ? 'active' : 'expired'}`}>{statusTag}</span>
+                    <span className="ticket-id">{s.id}</span>
+                  </div>
+                  <div className="ticket-qr-wrap">
+                    <TicketQR payload={s.payload} alt={s.id} />
+                  </div>
+                  <div className="ticket-body">
+                    <h3>{title}</h3>
+                    <p>
+                      {s.holderName} · {isAr ? `باقي ${num(s.tripsLeft, locale)} من ${num(s.tripsTotal, locale)} رحلة` : `${num(s.tripsLeft, locale)} of ${num(s.tripsTotal, locale)} trips left`}
+                    </p>
+                    <small>
+                      {isAr ? `ينتهي ${formatDate(s.expiresAt, locale)} الساعة ${formatTime(s.expiresAt, locale)}` : `expires ${formatDate(s.expiresAt, locale)} at ${formatTime(s.expiresAt, locale)}`}
+                    </small>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {tickets.length > 0 && (
+        <div className="wallet-section">
+          <div className="section-title-row">
+            <div>
+              <span className="eyebrow green">{isAr ? 'التذاكر' : 'Tickets'}</span>
+              <h2>{t('tickets.ticketsHeading')}</h2>
+            </div>
+          </div>
+          <div className="wallet-grid">
+            {tickets.map((tItem) => {
+              const active = tItem.status === 'valid';
+              const kindLabel = tItem.kind === 'half' ? (isAr ? 'نصف تذكرة' : 'Half ticket') : (isAr ? 'تذكرة كاملة' : 'Full ticket');
+              const statusTag = active ? (isAr ? 'صالحة' : 'Valid') : (isAr ? 'منتهية' : 'Expired');
+              return (
+                <div className="ticket-card" key={tItem.id}>
+                  <div className="ticket-head">
+                    <span className={`status-pill ${active ? 'active' : 'expired'}`}>{statusTag}</span>
+                    <span className="ticket-id">{tItem.id}</span>
+                  </div>
+                  <div className="ticket-qr-wrap">
+                    <TicketQR payload={tItem.payload} alt={tItem.id} />
+                  </div>
+                  <div className="ticket-body">
+                    <h3>{translateRoute(tItem.route)}</h3>
+                    <p>
+                      {kindLabel} · {num(tItem.fare, locale)} {t('common.egp')}
+                    </p>
+                    <small>
+                      {isAr ? `تنتهي ${formatDate(tItem.expiresAt, locale)} الساعة ${formatTime(tItem.expiresAt, locale)}` : `expires ${formatDate(tItem.expiresAt, locale)} at ${formatTime(tItem.expiresAt, locale)}`}
+                    </small>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {subs.length === 0 && tickets.length === 0 && !justPaid && (
         <div className="result-card empty-result">
           <div className="empty-illustration">
             <Icon name="ticket" size={48} />
@@ -151,91 +176,9 @@ export default function MyTicketsPage({ onPlan, justPaid }: { onPlan: () => void
           <h3>{t('tickets.emptyTitle')}</h3>
           <p>{t('tickets.emptyText')}</p>
           <button className="dark-button" onClick={onPlan}>
-            {t('tickets.newTrip')} <Icon name="arrow" size={16} />
+            {t('tickets.newTrip')}
           </button>
         </div>
-      ) : (
-        <>
-          {subs.length > 0 && (
-            <>
-              <h2 className="wallet-section-title">{t('tickets.subsHeading')}</h2>
-              <div className="wallet-grid">
-                {subs.map((sub) => {
-                  const status = subStatus(sub);
-                  const left = tripsLeft(sub);
-                  return (
-                    <article className={`wallet-card ${status}`} key={sub.id}>
-                      {qrs[sub.id] && (
-                        <img
-                          className="qr-img small"
-                          src={qrs[sub.id]}
-                          alt={t('tickets.qrSubAlt', { id: sub.id })}
-                        />
-                      )}
-                      <div>
-                        <span className={`status-pill ${status}`}>{subStatusText[status]}</span>
-                        <h3>
-                          {t('tickets.subTitle', { plan: planName(sub.plan), zone: zoneName(sub.zone) })}
-                        </h3>
-                        <p>
-                          {t('tickets.subLeft', {
-                            name: sub.name,
-                            left: num(Math.max(0, left), locale),
-                            total: num(sub.tripsTotal, locale),
-                          })}
-                        </p>
-                        <div className="trip-meter" aria-hidden="true">
-                          <span style={{ width: `${Math.max(0, Math.min(100, (left / sub.tripsTotal) * 100))}%` }} />
-                        </div>
-                        <small>
-                          {t('tickets.subExpires', { id: sub.id, when: formatTime(sub.exp, locale) })}
-                        </small>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </>
-          )}
-
-          {tickets.length > 0 && (
-            <>
-              {subs.length > 0 && <h2 className="wallet-section-title">{t('tickets.ticketsHeading')}</h2>}
-              <div className="wallet-grid">
-                {tickets.map((ticket) => {
-                  const status = ticketStatus(ticket);
-                  return (
-                    <article className={`wallet-card ${status}`} key={ticket.id}>
-                      {qrs[ticket.id] && (
-                        <img
-                          className="qr-img small"
-                          src={qrs[ticket.id]}
-                          alt={t('tickets.qrTicketAlt', { id: ticket.id })}
-                        />
-                      )}
-                      <div>
-                        <span className={`status-pill ${status}`}>{statusText[status]}</span>
-                        <h3>
-                          {getStationName(ticket.from, lang)} ← {getStationName(ticket.to, lang)}
-                        </h3>
-                        <p>
-                          {t('tickets.ticketMeta', {
-                            name: ticket.name,
-                            fare: num(ticket.fare, locale),
-                            kind: ticketKindLabels[ticket.kind ?? 'full'],
-                          })}
-                        </p>
-                        <small>
-                          {t('tickets.ticketExpires', { id: ticket.id, when: formatTime(ticket.exp, locale) })}
-                        </small>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </>
       )}
     </div>
   );
