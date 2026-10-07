@@ -1,21 +1,20 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { setFormatLocale } from '../lib/format';
-import { dictionary, type Lang, type TextKey } from './dictionary';
-
-// Re-exported so files that used to import these types from here keep compiling.
-export type { Lang, TextKey };
+import { ar, type Key } from './ar';
+import { en } from './en';
 
 const STORAGE_KEY = 'monoraily-lang';
 
-type Vars = Record<string, string | number>;
+export type Lang = 'ar' | 'en';
+export type TextKey = Key;
+
+const dictionary: Record<Lang, Record<string, string>> = { ar, en };
 
 type LanguageValue = {
   lang: Lang;
   dir: 'rtl' | 'ltr';
   /** Locale for Intl formatters. */
   locale: string;
-  /** Accepts any key: a missing one falls back to Arabic, then to the key itself. */
-  t: (key: string, vars?: Vars) => string;
+  t: (key: string, vars?: Record<string, string | number>) => string;
   toggleLang: () => void;
 };
 
@@ -31,18 +30,18 @@ function initialLang(): Lang {
   return 'ar';
 }
 
-function translate(lang: Lang, key: string, vars?: Vars): string {
-  const table = dictionary[lang] as Record<string, string>;
-  const fallback = dictionary.ar as Record<string, string>;
-  const text = table[key] ?? fallback[key] ?? key;
-  return vars ? text.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? '')) : text;
+function translate(lang: Lang, key: string, vars?: Record<string, string | number>): string {
+  let text = dictionary[lang]?.[key] ?? dictionary.ar[key] ?? String(key);
+  if (vars) {
+    Object.entries(vars).forEach(([k, v]) => {
+      text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+    });
+  }
+  return text;
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>(initialLang);
-
-  // Set before the children render, so num() and the date helpers already use the right locale.
-  setFormatLocale(lang);
 
   useEffect(() => {
     document.documentElement.lang = lang;
