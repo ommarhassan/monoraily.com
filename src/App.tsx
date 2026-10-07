@@ -19,22 +19,32 @@ import VerificationPage from './pages/VerificationPage';
 import VerifyScreen from './pages/VerifyScreen';
 
 const CLOCK_TICK_MS = 30_000;
-/** Pages already translated to English. Any other page stays Arabic (rtl) even when English is selected. */
+const validPages: Page[] = ['home', 'map', 'stations', 'fares', 'mytickets', 'gate', 'dashboard', 'verification', 'admin', 'auth'];
 const translatedPages: Page[] = ['home', 'map', 'stations', 'fares', 'mytickets', 'gate', 'dashboard', 'verification', 'admin', 'auth'];
+
+function getInitialPage(): Page {
+  try {
+    const hash = window.location.hash.replace('#', '').trim() as Page;
+    if (validPages.includes(hash)) return hash;
+    const saved = localStorage.getItem('monoraily_page') as Page;
+    if (validPages.includes(saved)) return saved;
+  } catch {
+    // ignore
+  }
+  return 'home';
+}
 
 function Shell() {
   const { user, loading, recovery, isAdmin, signOut } = useAuth();
   const { dir } = useLanguage();
   const planner = usePlanner();
 
-  const [page, setPage] = useState<Page>('home');
+  const [page, setPage] = useState<Page>(getInitialPage);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
-  /** Where to go after a successful login. */
   const [afterLogin, setAfterLogin] = useState<Page>('dashboard');
   const [ticketOpen, setTicketOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [now, setNow] = useState(() => new Date());
-  /** Ticket id Paymob sends the customer back with (?paid=PAY-XXXX). Never trusted as proof of payment. */
   const [paidId, setPaidId] = useState<string | null>(() => new URLSearchParams(window.location.search).get('paid'));
 
   useEffect(() => {
@@ -43,10 +53,20 @@ function Shell() {
   }, []);
 
   useEffect(() => {
+    const onHashChange = () => {
+      const hash = window.location.hash.replace('#', '').trim() as Page;
+      if (validPages.includes(hash)) {
+        setPage(hash);
+      }
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  useEffect(() => {
     if (user && page === 'auth' && !recovery) setPage(afterLogin);
   }, [user, page, recovery, afterLogin]);
 
-  // Back from Paymob: clean the URL and open the wallet (log in first if the session is gone).
   useEffect(() => {
     if (paidId) window.history.replaceState(null, '', window.location.pathname);
   }, [paidId]);
@@ -73,11 +93,16 @@ function Shell() {
     if (protectedPages.includes(target) && !user && !loading) return openAuth('login', target);
     setPaidId(null);
     setPage(target);
+    try {
+      window.location.hash = target;
+      localStorage.setItem('monoraily_page', target);
+    } catch {
+      // ignore
+    }
     setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  /** Opens the ticket modal for the current route, asking to log in first when needed. */
   const book = () => (user ? setTicketOpen(true) : openAuth('login', 'home'));
 
   const renderPage = () => {
@@ -147,7 +172,7 @@ function Shell() {
         onRegister={() => openAuth('register', 'home')}
         onSignOut={() => {
           void signOut();
-          setPage('home');
+          go('home');
         }}
       />
       <NewsTicker />
@@ -170,7 +195,6 @@ function Shell() {
 }
 
 export default function App() {
-  // A ticket QR opens the app with ?verify=<token>: show the gate result instead of the full app.
   const token = new URLSearchParams(window.location.search).get('verify');
   return token ? (
     <VerifyScreen token={token} />
