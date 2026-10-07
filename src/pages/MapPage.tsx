@@ -7,7 +7,7 @@ type Props = {
   onTicket?: (from: string, to: string) => void 
 };
 
-// أيقونات SVG نظيفة وبسيطة وعملية (تصميم بشري قياسي بدون مظاهر AI)
+// أيقونات SVG نظيفة وعملية للمشروع
 const SearchIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -73,47 +73,55 @@ const ClockIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
   </svg>
 );
 
-// مسار المنحنى المايل الشامل والواسع (S-Curved Bezier Path)
-const TRACK_PATH = "M 80,180 C 220,100 380,140 520,280 C 660,420 800,380 940,240 C 1080,100 1200,280 1320,440";
+// مسار المنحنى المايل الرئيسي لخط شرق النيل
+const EAST_PATH = "M 70,140 C 120,115 170,110 225,118 C 300,130 380,200 465,278 C 540,330 645,380 745,370 C 845,350 945,236 985,220 C 1045,210 1085,310 1140,460";
 
-// مسار خط غرب النيل التبادلي
-const WEST_LINK_PATH = "M 300,560 C 400,480 470,390 525,282";
+// مسار خط غرب النيل (6 أكتوبر)
+const WEST_PATH = "M 160,530 C 230,460 330,360 425,244";
 
-// إحداثيات الـ 27 محطة موزعة بمساحات واسعة لتسهيل القراءة وضمان عدم تداخل الأسماء
+// إحداثيات الـ 27 محطة لشرق النيل تقع 100% فوق المنحنى المايل بالضبط
 const EAST_COORDS: Record<string, { x: number; y: number }> = {
-  'st-1': { x: 80, y: 180 },
-  'st-2': { x: 125, y: 155 },
-  'st-3': { x: 175, y: 135 },
-  'st-4': { x: 225, y: 125 },
-  'st-5': { x: 275, y: 128 },
-  'st-6': { x: 325, y: 145 },
-  'st-7': { x: 375, y: 175 },
-  'st-8': { x: 425, y: 215 },
-  'st-9': { x: 475, y: 255 },
-  'st-10': { x: 525, y: 282 },
-  'st-11': { x: 575, y: 310 },
-  'st-12': { x: 625, y: 335 },
-  'st-13': { x: 675, y: 350 },
-  'st-14': { x: 725, y: 355 },
-  'st-15': { x: 775, y: 345 },
-  'st-16': { x: 825, y: 320 },
-  'st-17': { x: 875, y: 280 },
-  'st-18': { x: 925, y: 245 },
-  'st-19': { x: 975, y: 210 },
-  'st-20': { x: 1025, y: 190 },
-  'st-21': { x: 1075, y: 190 },
-  'st-22': { x: 1125, y: 220 },
-  'st-23': { x: 1175, y: 270 },
-  'st-24': { x: 1225, y: 330 },
-  'st-25': { x: 1265, y: 380 },
-  'st-26': { x: 1300, y: 415 },
-  'st-27': { x: 1335, y: 440 },
+  'st-1': { x: 70, y: 140 },
+  'st-2': { x: 105, y: 126 },
+  'st-3': { x: 145, y: 115 },
+  'st-4': { x: 185, y: 112 },
+  'st-5': { x: 225, y: 118 },
+  'st-6': { x: 265, y: 132 },
+  'st-7': { x: 305, y: 152 },
+  'st-8': { x: 345, y: 178 },
+  'st-9': { x: 385, y: 210 },
+  'st-10': { x: 425, y: 244 },
+  'st-11': { x: 465, y: 278 },
+  'st-12': { x: 505, y: 308 },
+  'st-13': { x: 545, y: 332 },
+  'st-14': { x: 595, y: 358 },
+  'st-15': { x: 645, y: 374 },
+  'st-16': { x: 695, y: 378 },
+  'st-17': { x: 745, y: 370 },
+  'st-18': { x: 795, y: 350 },
+  'st-19': { x: 845, y: 318 },
+  'st-20': { x: 895, y: 278 },
+  'st-21': { x: 945, y: 236 },
+  'st-22': { x: 985, y: 220 },
+  'st-23': { x: 1025, y: 235 },
+  'st-24': { x: 1065, y: 285 },
+  'st-25': { x: 1095, y: 345 },
+  'st-26': { x: 1120, y: 405 },
+  'st-27': { x: 1140, y: 460 },
 };
 
-// دالة آمنة لفحص المحطات التبادلية
+// محطات خط غرب النيل (6 أكتوبر)
+const WEST_STATIONS = [
+  { id: 'w-1', name: { ar: 'جامعة 6 أكتوبر', en: '6th of October Univ' }, area: { ar: '6 أكتوبر', en: '6th of October' }, x: 160, y: 530 },
+  { id: 'w-2', name: { ar: 'ميدان الحصري', en: 'El-Hossary Square' }, area: { ar: '6 أكتوبر', en: '6th of October' }, x: 220, y: 470 },
+  { id: 'w-3', name: { ar: 'ميدان جهينة', en: 'Juhayna Square' }, area: { ar: '6 أكتوبر', en: '6th of October' }, x: 280, y: 410 },
+  { id: 'w-4', name: { ar: 'الشيخ زايد', en: 'Sheikh Zayed' }, area: { ar: 'الشيخ زايد', en: 'Sheikh Zayed' }, x: 335, y: 350 },
+  { id: 'w-5', name: { ar: 'محور 26 يوليو', en: '26th of July Axis' }, area: { ar: 'الجيزة', en: 'Giza' }, x: 380, y: 295 },
+];
+
 const isInterchangeStation = (st: any): boolean => {
   if (!st) return false;
-  return Boolean(st.isInterchange || st.interchange || st.transfer || ['st-1', 'st-10', 'st-24'].includes(st.id));
+  return Boolean(st.isInterchange || st.interchange || st.transfer || ['st-1', 'st-10', 'st-24', 'w-5'].includes(st.id));
 };
 
 export default function MapPage({ onTicket }: Props) {
@@ -121,77 +129,92 @@ export default function MapPage({ onTicket }: Props) {
   const currentLang = (lang || 'ar') as 'ar' | 'en';
   const isAr = currentLang === 'ar';
 
+  const [activeLine, setActiveLine] = useState<'all' | 'east' | 'west' | 'interchange'>('all');
   const [selectedStationId, setSelectedStationId] = useState<string | null>('st-1');
   const [originId, setOriginId] = useState<string | null>('st-1');
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterMode, setFilterMode] = useState<'all' | 'interchange'>('all');
+
+  // دمج كل المحطات الشرقية والغربية
+  const allNetworkStations = useMemo(() => {
+    const east = (stations as any[]).map(s => ({ ...s, line: 'east' }));
+    const west = WEST_STATIONS.map(w => ({ ...w, line: 'west' }));
+    return [...east, ...west];
+  }, []);
 
   const selectedStation = useMemo(
-    () => (stations as any[]).find((s) => s.id === selectedStationId) || stations[0],
-    [selectedStationId]
+    () => allNetworkStations.find((s) => s.id === selectedStationId) || allNetworkStations[0],
+    [selectedStationId, allNetworkStations]
   );
 
   const originStation = useMemo(
-    () => (stations as any[]).find((s) => s.id === originId),
-    [originId]
+    () => allNetworkStations.find((s) => s.id === originId),
+    [originId, allNetworkStations]
   );
 
   const hoveredStation = useMemo(
-    () => (stations as any[]).find((s) => s.id === hoveredId),
-    [hoveredId]
+    () => allNetworkStations.find((s) => s.id === hoveredId),
+    [hoveredId, allNetworkStations]
   );
 
   const activeStation = hoveredStation || selectedStation;
 
-  const filteredStations = useMemo(() => {
+  const filteredEastStations = useMemo(() => {
     return (stations as any[]).filter((st) => {
       const name = getStationName(st.name, currentLang);
-      const area = getStationName(st.area, currentLang);
-      const matchesSearch = 
-        name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        area.toLowerCase().includes(searchQuery.toLowerCase());
-
-      if (filterMode === 'interchange') {
-        return matchesSearch && isInterchangeStation(st);
-      }
+      const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
+      if (activeLine === 'west') return false;
+      if (activeLine === 'interchange') return matchesSearch && isInterchangeStation(st);
       return matchesSearch;
     });
-  }, [searchQuery, filterMode, currentLang]);
+  }, [searchQuery, activeLine, currentLang]);
+
+  const filteredWestStations = useMemo(() => {
+    return WEST_STATIONS.filter((st) => {
+      const name = isAr ? st.name.ar : st.name.en;
+      const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
+      if (activeLine === 'east') return false;
+      if (activeLine === 'interchange') return matchesSearch && isInterchangeStation(st);
+      return matchesSearch;
+    });
+  }, [searchQuery, activeLine, isAr]);
+
+  const eastColor = lineColors['east-nile'] || '#0284c7';
+  const westColor = lineColors['west-nile'] || '#f59e0b';
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 space-y-6">
-      {/* Header Panel - تصميم واجهة مواصلات عامة رسمية ونظيفة */}
+      {/* Header Panel */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
               <TrainIcon className="w-3.5 h-3.5" />
-              <span>{isAr ? 'شبكة مونوريل شرق النيل الرسمية' : 'Official East Nile Monorail Line'}</span>
+              <span>{isAr ? 'شبكة المونوريل التفاعلية الرسمية' : 'Official Monorail Interactive Network'}</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
               {isAr ? 'خريطة مسارات وسرعة المونوريل' : 'Monorail Route & Network Map'}
             </h1>
             <p className="text-slate-400 text-sm max-w-2xl">
               {isAr 
-                ? 'استعرض محطات خط شرق النيل الممتد من ستاد القاهرة إلى العاصمة الإدارية الجديدة بوضوح وسهولة.'
-                : 'Explore all stations connecting Cairo Stadium, New Cairo, and the New Administrative Capital.'}
+                ? 'استعرض خطوط شرق وغرب النيل مع الربط التبادلي وحاسبة الرحلة والتكلفة المباشرة.'
+                : 'Explore East & West Nile monorail lines with interchanges and live trip fare calculator.'}
             </p>
           </div>
 
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-3 gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
             <div className="text-center p-2">
-              <div className="text-xs text-slate-400">{isAr ? 'المحطات' : 'Stations'}</div>
-              <div className="text-lg font-bold text-cyan-400">27</div>
+              <div className="text-xs text-slate-400">{isAr ? 'إجمالي المحطات' : 'Stations'}</div>
+              <div className="text-lg font-bold text-cyan-400">32</div>
             </div>
             <div className="text-center p-2 border-x border-slate-800">
-              <div className="text-xs text-slate-400">{isAr ? 'المسافة' : 'Distance'}</div>
-              <div className="text-lg font-bold text-blue-400">{isAr ? '56.5 كم' : '56.5 km'}</div>
+              <div className="text-xs text-slate-400">{isAr ? 'الخطوط' : 'Lines'}</div>
+              <div className="text-lg font-bold text-blue-400">{isAr ? 'خطين (شرق/غرب)' : '2 Lines'}</div>
             </div>
             <div className="text-center p-2">
-              <div className="text-xs text-slate-400">{isAr ? 'الزمن' : 'Time'}</div>
-              <div className="text-lg font-bold text-emerald-400">{isAr ? '60 دقيقة' : '60 min'}</div>
+              <div className="text-xs text-slate-400">{isAr ? 'السرعة' : 'Speed'}</div>
+              <div className="text-lg font-bold text-emerald-400">{isAr ? '80 كم/س' : '80 km/h'}</div>
             </div>
           </div>
         </div>
@@ -211,21 +234,35 @@ export default function MapPage({ onTicket }: Props) {
 
           <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
             <button
-              onClick={() => setFilterMode('all')}
+              onClick={() => setActiveLine('all')}
               className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                filterMode === 'all'
-                  ? 'bg-cyan-500 text-slate-950 font-bold'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                activeLine === 'all' ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
               }`}
             >
-              {isAr ? 'جميع المحطات' : 'All Stations'}
+              {isAr ? 'جميع المحطات' : 'All Lines'}
             </button>
             <button
-              onClick={() => setFilterMode('interchange')}
+              onClick={() => setActiveLine('east')}
               className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                filterMode === 'interchange'
-                  ? 'bg-cyan-500 text-slate-950 font-bold'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                activeLine === 'east' ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full" style={{ background: eastColor }} />
+              {isAr ? lineMeta['east-nile']?.name || 'خط شرق النيل' : 'East Nile'}
+            </button>
+            <button
+              onClick={() => setActiveLine('west')}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                activeLine === 'west' ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full" style={{ background: westColor }} />
+              {isAr ? lineMeta['west-nile']?.name || 'خط غرب النيل (6 أكتوبر)' : 'West Nile'}
+            </button>
+            <button
+              onClick={() => setActiveLine('interchange')}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                activeLine === 'interchange' ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
               }`}
             >
               <ZapIcon className="w-3.5 h-3.5" />
@@ -234,7 +271,7 @@ export default function MapPage({ onTicket }: Props) {
             <button
               onClick={() => {
                 setSearchQuery('');
-                setFilterMode('all');
+                setActiveLine('all');
                 setSelectedStationId('st-1');
               }}
               className="px-3 py-2 rounded-xl text-xs text-slate-400 hover:text-white bg-slate-800/40 hover:bg-slate-800 transition-all flex items-center gap-1"
@@ -247,115 +284,112 @@ export default function MapPage({ onTicket }: Props) {
         </div>
       </div>
 
-      {/* Main Grid: Broad SVG Canvas & Interactive Sidebar */}
+      {/* SVG Canvas & Info Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* SVG Canvas Container - مساحة واسعة ورؤية واضحة جداً للمستخدم */}
         <div className="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-xl relative overflow-hidden min-h-[550px] flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-slate-400 mb-2 px-2">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5">
-                <span className="w-3.5 h-1.5 rounded-full" style={{ background: lineColors['east-nile'] || '#0284c7' }} />
-                {isAr ? lineMeta['east-nile']?.name || 'خط شرق النيل' : 'East Nile Line'}
+                <span className="w-3.5 h-1.5 rounded-full" style={{ background: eastColor }} />
+                {isAr ? 'خط شرق النيل (العاصمة الإدارية)' : 'East Nile Line'}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3.5 h-1.5 rounded-full" style={{ background: westColor }} />
+                {isAr ? 'خط غرب النيل (6 أكتوبر)' : 'West Nile Line'}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full border-2 border-cyan-400 bg-slate-950" />
                 {isAr ? 'محطة تبادلية' : 'Interchange Station'}
               </span>
             </div>
-            <span className="hidden sm:inline text-slate-500 font-mono">MAP CANVAS 1400x650</span>
+            <span className="hidden sm:inline text-slate-500 font-mono">MAP CANVAS 1200x600</span>
           </div>
 
-          <div className="w-full h-full min-h-[460px] relative flex items-center justify-center overflow-x-auto">
-            <svg viewBox="0 0 1400 650" className="w-full h-full min-w-[950px] select-none">
+          <div className="w-full h-full min-h-[480px] relative flex items-center justify-center overflow-x-auto">
+            <svg viewBox="0 0 1200 600" className="w-full h-full min-w-[900px] select-none">
               <defs>
                 <pattern id="mapGrid" width="50" height="50" patternUnits="userSpaceOnUse">
                   <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#1e293b" strokeWidth="0.5" opacity="0.3" />
                 </pattern>
-                <linearGradient id="trackGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <linearGradient id="eastGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%" stopColor="#0284c7" />
                   <stop offset="50%" stopColor="#38bdf8" />
                   <stop offset="100%" stopColor="#06b6d4" />
                 </linearGradient>
+                <linearGradient id="westGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#f59e0b" />
+                  <stop offset="100%" stopColor="#d97706" />
+                </linearGradient>
               </defs>
 
-              {/* Grid background */}
-              <rect width="1400" height="650" fill="url(#mapGrid)" rx="16" />
+              {/* Grid Background */}
+              <rect width="1200" height="600" fill="url(#mapGrid)" rx="16" />
 
-              {/* Sectors / Zones */}
-              <g opacity="0.4">
-                <rect x="60" y="80" width="340" height="150" rx="16" fill="#0284c7" opacity="0.08" stroke="#0284c7" strokeWidth="1" strokeDasharray="4 4" />
-                <text x="80" y="105" fill="#38bdf8" fontSize="13" fontWeight="bold">
+              {/* Sector Boundaries */}
+              <g opacity="0.35">
+                <rect x="50" y="60" width="310" height="150" rx="14" fill="#0284c7" opacity="0.08" stroke="#0284c7" strokeWidth="1" strokeDasharray="4 4" />
+                <text x="65" y="82" fill="#38bdf8" fontSize="12" fontWeight="bold">
                   {isAr ? 'قطاع مدينة نصر' : 'Nasr City Sector'}
                 </text>
 
-                <rect x="440" y="180" width="460" height="220" rx="16" fill="#38bdf8" opacity="0.08" stroke="#38bdf8" strokeWidth="1" strokeDasharray="4 4" />
-                <text x="460" y="205" fill="#38bdf8" fontSize="13" fontWeight="bold">
+                <rect x="390" y="160" width="450" height="230" rx="14" fill="#38bdf8" opacity="0.08" stroke="#38bdf8" strokeWidth="1" strokeDasharray="4 4" />
+                <text x="410" y="185" fill="#38bdf8" fontSize="12" fontWeight="bold">
                   {isAr ? 'قطاع القاهرة الجديدة (التجمع)' : 'New Cairo Sector'}
                 </text>
 
-                <rect x="940" y="140" width="420" height="340" rx="16" fill="#06b6d4" opacity="0.08" stroke="#06b6d4" strokeWidth="1" strokeDasharray="4 4" />
-                <text x="960" y="165" fill="#06b6d4" fontSize="13" fontWeight="bold">
+                <rect x="860" y="120" width="320" height="360" rx="14" fill="#06b6d4" opacity="0.08" stroke="#06b6d4" strokeWidth="1" strokeDasharray="4 4" />
+                <text x="880" y="145" fill="#06b6d4" fontSize="12" fontWeight="bold">
                   {isAr ? 'قطاع العاصمة الإدارية' : 'New Capital Sector'}
                 </text>
               </g>
 
-              {/* West Nile Line Intersecting Link */}
+              {/* WEST NILE MONORAIL TRACK LINE */}
               <path
-                d={WEST_LINK_PATH}
+                d={WEST_PATH}
                 fill="none"
-                stroke="#64748b"
-                strokeWidth="3"
-                strokeDasharray="6 6"
-                opacity="0.4"
-              />
-              <text x="180" y="550" fill="#94a3b8" fontSize="11" fontWeight="bold">
-                {isAr ? '← إلى 6 أكتوبر (خط غرب النيل)' : '← To 6th of Oct (West Line)'}
-              </text>
-
-              {/* S-CURVED MAIN MONORAIL TRACK */}
-              {/* Outer stroke shadow */}
-              <path
-                d={TRACK_PATH}
-                fill="none"
-                stroke="#0284c7"
-                strokeWidth="12"
-                opacity="0.25"
-              />
-              {/* Main Solid Line */}
-              <path
-                d={TRACK_PATH}
-                fill="none"
-                stroke="url(#trackGradient)"
+                stroke="url(#westGradient)"
                 strokeWidth="6"
                 strokeLinecap="round"
+                opacity={activeLine === 'east' ? 0.2 : 0.85}
               />
 
-              {/* Animated Train Icon */}
-              <g>
-                <animateMotion
-                  path={TRACK_PATH}
-                  dur="32s"
-                  repeatCount="indefinite"
-                  rotate="auto"
-                />
-                <circle r="12" fill="#0284c7" />
-                <circle r="7" fill="#ffffff" />
-              </g>
+              {/* EAST NILE MAIN CURVED MONORAIL TRACK */}
+              <path
+                d={EAST_PATH}
+                fill="none"
+                stroke="url(#eastGradient)"
+                strokeWidth="7"
+                strokeLinecap="round"
+                opacity={activeLine === 'west' ? 0.2 : 1}
+              />
 
-              {/* STATIONS WITH ANGLED LABELS (أسماء مائلة متباعدة تمنع أي تداخل) */}
-              {(stations as any[]).map((st: any, idx: number) => {
-                const coord = EAST_COORDS[st.id] || { x: 80 + idx * 45, y: 250 };
+              {/* ANIMATED TRAIN ON EAST LINE */}
+              {activeLine !== 'west' && (
+                <g>
+                  <animateMotion
+                    path={EAST_PATH}
+                    dur="30s"
+                    repeatCount="indefinite"
+                    rotate="auto"
+                  />
+                  <circle r="10" fill="#0284c7" />
+                  <circle r="5" fill="#ffffff" />
+                </g>
+              )}
+
+              {/* EAST NILE STATIONS (تأتي 100% فوق المنحنى بالضبط) */}
+              {(stations as any[]).map((st: any) => {
+                const coord = EAST_COORDS[st.id] || { x: 70, y: 140 };
                 const isSelected = selectedStationId === st.id;
                 const isHovered = hoveredId === st.id;
                 const isOrigin = originId === st.id;
-                const isMatchingFilter = filteredStations.some((s) => s.id === st.id);
+                const isMatchingFilter = filteredEastStations.some((s) => s.id === st.id);
                 const displayName = getStationName(st.name, currentLang);
                 const isInterchange = isInterchangeStation(st);
 
-                // مائل بـ -40 درجة لمنع تقاطع أو تداخل النصوص نهائياً
-                const textAngle = -40;
-                const textX = coord.x + 4;
-                const textY = coord.y - 14;
+                const textAngle = -42;
+                const textX = coord.x + 3;
+                const textY = coord.y - 12;
 
                 return (
                   <g
@@ -364,69 +398,112 @@ export default function MapPage({ onTicket }: Props) {
                     onClick={() => setSelectedStationId(st.id)}
                     onMouseEnter={() => setHoveredId(st.id)}
                     onMouseLeave={() => setHoveredId(null)}
-                    opacity={isMatchingFilter ? 1 : 0.25}
+                    opacity={isMatchingFilter ? 1 : 0.2}
                   >
-                    {/* Ring for active/hovered */}
                     {(isSelected || isHovered) && (
                       <circle
                         cx={coord.x}
                         cy={coord.y}
-                        r={isInterchange ? '18' : '14'}
+                        r={isInterchange ? '16' : '12'}
                         fill="none"
                         stroke="#38bdf8"
                         strokeWidth="2.5"
                       />
                     )}
 
-                    {/* Interchange vs Regular Marker */}
                     {isInterchange ? (
                       <>
-                        <circle
-                          cx={coord.x}
-                          cy={coord.y}
-                          r="10"
-                          fill="#0f172a"
-                          stroke="#0284c7"
-                          strokeWidth="3"
-                        />
-                        <circle
-                          cx={coord.x}
-                          cy={coord.y}
-                          r="5"
-                          fill={isSelected ? '#38bdf8' : '#00b4d8'}
-                        />
+                        <circle cx={coord.x} cy={coord.y} r="9" fill="#0f172a" stroke="#0284c7" strokeWidth="3" />
+                        <circle cx={coord.x} cy={coord.y} r="4" fill={isSelected ? '#38bdf8' : '#00b4d8'} />
                       </>
                     ) : (
                       <circle
                         cx={coord.x}
                         cy={coord.y}
-                        r={isSelected || isOrigin ? '7' : '5'}
+                        r={isSelected || isOrigin ? '6.5' : '4.5'}
                         fill={isOrigin ? '#10b981' : isSelected ? '#38bdf8' : '#ffffff'}
                         stroke={isOrigin ? '#059669' : '#0284c7'}
-                        strokeWidth="2.5"
+                        strokeWidth="2"
                       />
                     )}
 
-                    {/* Departure Pin */}
                     {isOrigin && (
-                      <g transform={`translate(${coord.x - 12}, ${coord.y + 12})`}>
-                        <rect width="24" height="14" rx="4" fill="#10b981" />
-                        <text x="12" y="10" fill="#ffffff" fontSize="8" fontWeight="bold" textAnchor="middle">
+                      <g transform={`translate(${coord.x - 12}, ${coord.y + 10})`}>
+                        <rect width="24" height="13" rx="3" fill="#10b981" />
+                        <text x="12" y="9" fill="#ffffff" fontSize="8" fontWeight="bold" textAnchor="middle">
                           {isAr ? 'بداية' : 'Start'}
                         </text>
                       </g>
                     )}
 
-                    {/* Angled Station Name Label (مساحة واسعة وقراءة مريحة للمستخدم) */}
                     <text
                       x={textX}
                       y={textY}
                       transform={`rotate(${textAngle} ${textX} ${textY})`}
                       fill={isSelected ? '#ffffff' : isHovered ? '#38bdf8' : '#cbd5e1'}
-                      fontSize={isSelected || isInterchange ? '12' : '11'}
+                      fontSize={isSelected || isInterchange ? '11.5' : '10.5'}
                       fontWeight={isSelected || isInterchange ? '700' : '600'}
                       textAnchor={isAr ? 'end' : 'start'}
-                      className="pointer-events-none transition-colors duration-150"
+                      className="pointer-events-none"
+                    >
+                      {displayName}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* WEST NILE STATIONS (محطات خط 6 أكتوبر) */}
+              {WEST_STATIONS.map((st: any) => {
+                const isSelected = selectedStationId === st.id;
+                const isHovered = hoveredId === st.id;
+                const isOrigin = originId === st.id;
+                const isMatchingFilter = filteredWestStations.some((s) => s.id === st.id);
+                const displayName = isAr ? st.name.ar : st.name.en;
+
+                const textAngle = -35;
+                const textX = st.x + 3;
+                const textY = st.y - 10;
+
+                return (
+                  <g
+                    key={st.id}
+                    className="cursor-pointer transition-all duration-200"
+                    onClick={() => setSelectedStationId(st.id)}
+                    onMouseEnter={() => setHoveredId(st.id)}
+                    onMouseLeave={() => setHoveredId(null)}
+                    opacity={isMatchingFilter ? 1 : 0.2}
+                  >
+                    {(isSelected || isHovered) && (
+                      <circle cx={st.x} cy={st.y} r="14" fill="none" stroke="#f59e0b" strokeWidth="2.5" />
+                    )}
+
+                    <circle
+                      cx={st.x}
+                      cy={st.y}
+                      r={isSelected || isOrigin ? '6.5' : '4.5'}
+                      fill={isOrigin ? '#10b981' : isSelected ? '#f59e0b' : '#ffffff'}
+                      stroke={isOrigin ? '#059669' : '#d97706'}
+                      strokeWidth="2"
+                    />
+
+                    {isOrigin && (
+                      <g transform={`translate(${st.x - 12}, ${st.y + 10})`}>
+                        <rect width="24" height="13" rx="3" fill="#10b981" />
+                        <text x="12" y="9" fill="#ffffff" fontSize="8" fontWeight="bold" textAnchor="middle">
+                          {isAr ? 'بداية' : 'Start'}
+                        </text>
+                      </g>
+                    )}
+
+                    <text
+                      x={textX}
+                      y={textY}
+                      transform={`rotate(${textAngle} ${textX} ${textY})`}
+                      fill={isSelected ? '#ffffff' : isHovered ? '#f59e0b' : '#cbd5e1'}
+                      fontSize={isSelected ? '11.5' : '10.5'}
+                      fontWeight={isSelected ? '700' : '600'}
+                      textAnchor={isAr ? 'end' : 'start'}
+                      className="pointer-events-none"
                     >
                       {displayName}
                     </text>
@@ -439,7 +516,7 @@ export default function MapPage({ onTicket }: Props) {
           <div className="mt-4 flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-800">
             <span className="flex items-center gap-1.5">
               <InfoIcon className="w-4 h-4 text-cyan-400" />
-              {isAr ? 'اضغط على المحطة للاختيار وحجز التذاكر.' : 'Click on any station to select and book tickets.'}
+              {isAr ? 'انقر على أي محطة على الخط المائل للاختيار والتوجيه.' : 'Click on any station on the curve line to select.'}
             </span>
             <span className="text-slate-400 font-medium">
               {isAr ? 'سرعة التشغيل: 80 كم/س' : 'Operating Speed: 80 km/h'}
@@ -451,14 +528,13 @@ export default function MapPage({ onTicket }: Props) {
         <div className="lg:col-span-4 space-y-6">
           {activeStation && (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 relative overflow-hidden">
-              {/* Station Header */}
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
-                    {getStationName(activeStation.area, currentLang)}
+                    {activeStation.area ? getStationName(activeStation.area, currentLang) : (isAr ? 'خط غرب النيل' : 'West Nile Line')}
                   </span>
                   <h2 className="text-xl font-bold text-white mt-1">
-                    {getStationName(activeStation.name, currentLang)}
+                    {activeStation.name ? getStationName(activeStation.name, currentLang) : (isAr ? activeStation.name?.ar : activeStation.name?.en)}
                   </h2>
                 </div>
 
@@ -469,7 +545,6 @@ export default function MapPage({ onTicket }: Props) {
                 )}
               </div>
 
-              {/* Amenities / Facilities */}
               <div className="space-y-2">
                 <div className="text-xs font-semibold text-slate-400">
                   {isAr ? 'المرافق والتجهيزات المتاحة:' : 'Available Amenities:'}
@@ -489,7 +564,6 @@ export default function MapPage({ onTicket }: Props) {
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="pt-3 border-t border-slate-800 space-y-2">
                 <button
                   onClick={() => setOriginId(activeStation.id)}
@@ -527,14 +601,18 @@ export default function MapPage({ onTicket }: Props) {
                 {isAr ? 'خط الرحلة المستهدف' : 'Route Overview'}
               </div>
               <div className="flex items-center justify-between text-sm text-white font-semibold">
-                <span className="text-emerald-400">{getStationName(originStation.name, currentLang)}</span>
+                <span className="text-emerald-400">
+                  {originStation.name ? getStationName(originStation.name, currentLang) : (isAr ? originStation.name?.ar : originStation.name?.en)}
+                </span>
                 <ArrowRightIcon className={`w-4 h-4 text-cyan-400 ${isAr ? 'rotate-180' : ''}`} />
-                <span className="text-rose-400">{getStationName(selectedStation.name, currentLang)}</span>
+                <span className="text-rose-400">
+                  {selectedStation.name ? getStationName(selectedStation.name, currentLang) : (isAr ? selectedStation.name?.ar : selectedStation.name?.en)}
+                </span>
               </div>
               <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
                 <span className="flex items-center gap-1">
                   <ClockIcon className="w-3.5 h-3.5 text-cyan-400" />
-                  {isAr ? 'الزمن المقدر: ~30 دقيقة' : 'Est. Time: ~30 mins'}
+                  {isAr ? 'الزمن المقدر: ~35 دقيقة' : 'Est. Time: ~35 mins'}
                 </span>
                 <span className="text-cyan-300 font-bold">
                   {isAr ? 'التذكرة: 15 ج.م' : 'Fare: 15 EGP'}
