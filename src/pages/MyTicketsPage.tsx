@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import Icon from '../components/Icon';
 import { getStationName } from '../components/StationPicker';
-import { farePlans, type PlanId } from '../data/fares';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { formatDate, formatTime, num } from '../lib/format';
@@ -9,7 +8,7 @@ import { formatDate, formatTime, num } from '../lib/format';
 type SavedSubscription = {
   id: string;
   userId: string;
-  plan: PlanId;
+  plan: string;
   zone: number;
   holderName: string;
   tripsLeft: number;
@@ -35,6 +34,12 @@ const planNames: Record<string, { ar: string; en: string }> = {
   weekly: { ar: 'أسبوعي', en: 'Weekly' },
   monthly: { ar: 'شهري', en: 'Monthly' },
   quarterly: { ar: 'ربع سنوي', en: 'Quarterly' },
+};
+
+const planTrips: Record<string, number> = {
+  weekly: 14,
+  monthly: 60,
+  quarterly: 180,
 };
 
 const zoneNames: Record<number, { ar: string; en: string }> = {
@@ -96,7 +101,7 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
                 {t('tickets.subInfo', {
                   plan: planNames[justPaidSub.plan]?.[lang] || justPaidSub.plan,
                   zone: zoneNames[justPaidSub.zone]?.[lang] || justPaidSub.zone,
-                  trips: num(farePlans.find((p) => p.id === justPaidSub.plan)?.trips ?? 0, locale),
+                  trips: num(planTrips[justPaidSub.plan] ?? 0, locale),
                 })}
               </p>
             </>
