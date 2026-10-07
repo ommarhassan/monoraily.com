@@ -1,23 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import type { TextKey } from '../i18n/dictionary';
-import { useLanguage } from '../i18n/LanguageContext';
 import {
   categoryLabels,
   myVerification,
+  statusLabels,
   submitVerification,
   type MyVerification,
   type VerificationCategory,
 } from '../lib/verification';
 
-const categoryText: Record<VerificationCategory, TextKey> = {
-  senior: 'catSenior',
-  disabled: 'catDisabled',
-};
-
 export default function VerificationPage() {
   const { user } = useAuth();
-  const { t } = useLanguage();
   const [info, setInfo] = useState<MyVerification | null>(null);
   const [category, setCategory] = useState<VerificationCategory>('senior');
   const [file, setFile] = useState<File | null>(null);
@@ -32,7 +25,7 @@ export default function VerificationPage() {
 
   const submit = async () => {
     if (!file) {
-      setMessage({ ok: false, text: t('chooseIdFirst') });
+      setMessage({ ok: false, text: 'اختار صورة الهوية الأول.' });
       return;
     }
     setBusy(true);
@@ -41,10 +34,10 @@ export default function VerificationPage() {
     setBusy(false);
     if (result.ok) {
       setFile(null);
-      setMessage({ ok: true, text: t('requestSent') });
+      setMessage({ ok: true, text: 'اتبعت طلبك، وهيتراجع قريب.' });
       await load();
     } else {
-      setMessage({ ok: false, text: result.errorKey ? t(result.errorKey) : t('genericError') });
+      setMessage({ ok: false, text: result.error ?? 'حصلت مشكلة، جرّب تاني.' });
     }
   };
 
@@ -55,33 +48,33 @@ export default function VerificationPage() {
   return (
     <div className="subpage">
       <div className="page-heading">
-        <span className="eyebrow green">{t('accountEyebrow')}</span>
-        <h1>{t('verification')}</h1>
-        <p>{t('verifIntro')}</p>
+        <span className="eyebrow green">الحساب</span>
+        <h1>توثيق الفئة</h1>
+        <p>نصف التذكرة متاح لكبار السن (فوق ٦٠ سنة) وذوي الإعاقة، بعد مراجعة المستند.</p>
       </div>
 
       {!info ? (
-        <p className="auth-sub">{t('loading')}</p>
+        <p className="auth-sub">بنحمّل…</p>
       ) : info.category ? (
         <div className="network-card">
-          <h3>{t('verifiedTitle')}</h3>
-          <p>{t('categoryLine', { category: t(categoryText[info.category]) })}</p>
-          <p>{t('validUntil', { date: info.until ?? '' })}</p>
+          <h3>حسابك موثّق ✓</h3>
+          <p>الفئة: {categoryLabels[info.category]}</p>
+          <p>التوثيق ساري لحد {info.until}.</p>
         </div>
       ) : pending ? (
         <div className="network-card">
-          <h3>{t('statusPending')}</h3>
-          <p>{t('pendingBody')}</p>
+          <h3>{statusLabels.pending}</h3>
+          <p>طلبك وصل وبيتراجع. هتقدر تحجز نصف تذكرة أول ما تتم الموافقة.</p>
         </div>
       ) : (
         <div className="network-card">
-          {expired && <p>{t('expiredNotice')}</p>}
-          {rejected && <p>{t('rejectedNotice')}</p>}
+          {expired && <p>التوثيق القديم انتهى. ابعت مستند جديد عشان تجدّده.</p>}
+          {rejected && <p>طلبك السابق اترفض. تقدر تبعت مستند أوضح.</p>}
 
-          <h3>{t('submitTitle')}</h3>
+          <h3>ابعت طلب توثيق</h3>
 
           <label className="auth-sub" htmlFor="verify-category">
-            {t('categoryField')}
+            الفئة
           </label>
           <select
             id="verify-category"
@@ -90,13 +83,13 @@ export default function VerificationPage() {
           >
             {(Object.keys(categoryLabels) as VerificationCategory[]).map((key) => (
               <option key={key} value={key}>
-                {t(categoryText[key])}
+                {categoryLabels[key]}
               </option>
             ))}
           </select>
 
           <label className="auth-sub" htmlFor="verify-file">
-            {t('fileField')}
+            صورة الهوية أو الكارنيه (JPG أو PNG أو WEBP أو PDF، لحد 5 ميجا)
           </label>
           <input
             id="verify-file"
@@ -105,10 +98,12 @@ export default function VerificationPage() {
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
 
-          <p className="auth-sub">{t('privacyNote')}</p>
+          <p className="auth-sub">
+            المستند بيتخزن في مكان خاص، والمراجع (الأدمن) بس هو اللي يقدر يشوفه، ومابنستخدمه لأي حاجة غير التوثيق.
+          </p>
 
           <button className="dark-button" disabled={busy || !file} onClick={submit}>
-            {busy ? t('uploading') : t('sendRequest')}
+            {busy ? 'بنرفع…' : 'ابعت الطلب'}
           </button>
         </div>
       )}
