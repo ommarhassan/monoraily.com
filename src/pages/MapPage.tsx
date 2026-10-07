@@ -25,56 +25,106 @@ export default function MapPage({ onTicket }: Props) {
   return (
     <div className="subpage">
       <div className="page-heading">
-        <span className="eyebrow green">{isAr ? 'الخريطة التفاعلية' : 'Interactive Map'}</span>
-        <h1>{isAr ? 'شبكة المونوريل بين إيديك.' : 'The Monorail Network in Your Hands.'}</h1>
+        <span className="eyebrow green">{isAr ? 'الخريطة التفاعلية المستقبلية' : 'Futuristic Monorail Control'}</span>
+        <h1>{isAr ? 'مركز التحكم في شبكة المونوريل.' : 'Monorail Control & Network Map.'}</h1>
         <p>
           {isAr
-            ? 'استكشف مسار خط شرق وغرب النيل والمحطات التبادلية على الخريطة.'
-            : 'Explore the East & West Nile lines and interchange stations on the map.'}
+            ? 'انقر على أي محطة لاستكشاف المسارات المباشرة، محطات التبادل، والرحلات.'
+            : 'Click on any station to explore live routes, interchanges, and trip planning.'}
         </p>
       </div>
 
       <div className="map-page-layout">
         <div className="map-card-wrap">
-          <div className="interactive-map-container" style={{ padding: '24px', textAlign: 'center' }}>
-            <svg viewBox="0 0 800 400" style={{ width: '100%', height: 'auto', maxHeight: '420px' }}>
+          <div
+            className="interactive-map-container"
+            style={{
+              position: 'relative',
+              overflow: 'hidden',
+              borderRadius: '18px',
+              background: 'linear-gradient(135deg, #0b132b, #1c2541, #131b2e)',
+              padding: '24px',
+              boxShadow: '0 12px 35px rgba(0,0,0,0.3)',
+            }}
+          >
+            <style>{`
+              @keyframes pulse-glow {
+                0% { stroke-dashoffset: 1000; }
+                100% { stroke-dashoffset: 0; }
+              }
+              .glow-line {
+                stroke-dasharray: 20, 12;
+                animation: pulse-glow 25s linear infinite;
+              }
+            `}</style>
+            <svg viewBox="0 0 900 450" style={{ width: '100%', height: 'auto', maxHeight: '480px' }}>
+              {/* Glow backdrop path */}
               <path
-                d="M 100 100 C 250 50, 400 350, 600 100 C 650 40, 720 80, 700 150"
+                d="M 80 120 C 220 40, 380 380, 620 120 C 680 50, 780 70, 750 160 C 720 250, 820 280, 850 220"
                 fill="none"
                 stroke={lineColors['east-nile']}
-                strokeWidth="7"
+                strokeWidth="14"
+                strokeOpacity="0.2"
                 strokeLinecap="round"
               />
+              {/* Main Line path */}
               <path
-                d="M 120 340 C 250 330, 320 250, 350 180"
+                d="M 80 120 C 220 40, 380 380, 620 120 C 680 50, 780 70, 750 160 C 720 250, 820 280, 850 220"
                 fill="none"
-                stroke="#7b8794"
-                strokeWidth="5"
-                strokeDasharray="6,6"
+                stroke={lineColors['east-nile']}
+                strokeWidth="6"
+                strokeLinecap="round"
+              />
+              {/* Electric pulse line */}
+              <path
+                className="glow-line"
+                d="M 80 120 C 220 40, 380 380, 620 120 C 680 50, 780 70, 750 160 C 720 250, 820 280, 850 220"
+                fill="none"
+                stroke="#5ce1e6"
+                strokeWidth="3"
                 strokeLinecap="round"
               />
 
-              {stations.slice(0, 15).map((st: Station, i: number) => {
-                const cx = 100 + i * 42;
-                const cy = 100 + Math.sin(i * 0.5) * 60;
+              {/* West Nile Line path */}
+              <path
+                d="M 100 360 C 240 340, 320 260, 360 180"
+                fill="none"
+                stroke="#7b8794"
+                strokeWidth="4"
+                strokeDasharray="8,6"
+                strokeLinecap="round"
+              />
+
+              {/* Station Nodes */}
+              {stations.map((st: Station, i: number) => {
+                const cx = 80 + i * 36;
+                const cy = 120 + Math.sin(i * 0.45) * 80;
                 const isSelected = selectedStationId === st.id;
+                const isOrigin = originId === st.id;
+
                 return (
                   <g key={st.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedStationId(st.id)}>
+                    {isSelected && (
+                      <circle cx={cx} cy={cy} r="14" fill="none" stroke="#5ce1e6" strokeWidth="2">
+                        <animate attributeName="r" values="8;18;8" dur="2s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="1;0.2;1" dur="2s" repeatCount="indefinite" />
+                      </circle>
+                    )}
                     <circle
                       cx={cx}
                       cy={cy}
-                      r={isSelected ? '9' : '6'}
-                      fill={isSelected ? '#325586' : '#ffffff'}
-                      stroke={lineColors['east-nile']}
+                      r={isSelected || isOrigin ? '8' : '5'}
+                      fill={isOrigin ? '#ff9f43' : isSelected ? '#5ce1e6' : '#ffffff'}
+                      stroke={isOrigin ? '#e67e22' : lineColors['east-nile']}
                       strokeWidth="3"
                     />
                     <text
                       x={cx}
-                      y={cy + 18}
+                      y={i % 2 === 0 ? cy - 14 : cy + 20}
                       fontSize="10"
-                      fontWeight="600"
+                      fontWeight="700"
                       textAnchor="middle"
-                      fill="#3a4b5c"
+                      fill={isSelected ? '#5ce1e6' : '#e2e8f0'}
                     >
                       {getStationName(st.name, lang)}
                     </text>
@@ -86,7 +136,7 @@ export default function MapPage({ onTicket }: Props) {
 
           <div className="map-legend-strip">
             <span className="legend-chip">
-              <span className="chip-dot" style={{ background: lineColors['east-nile'] }} />
+              <span className="chip-dot" style={{ background: lineColors['east-nile'], boxShadow: '0 0 8px #2f6fd6' }} />
               {isAr ? lineMeta['east-nile'].name : 'East Nile Line'}
             </span>
             <span className="legend-chip">
