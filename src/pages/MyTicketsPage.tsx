@@ -115,7 +115,7 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
           <div className="section-title-row">
             <div>
               <span className="eyebrow green">{isAr ? 'الاشتراكات' : 'Subscriptions'}</span>
-              2>{t('tickets.subsHeading')}</h2>
+              <h2>{t('tickets.subsHeading')}</h2>
             </div>
           </div>
           <div className="wallet-grid">
