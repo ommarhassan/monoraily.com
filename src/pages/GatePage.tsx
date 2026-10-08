@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Icon from '../components/Icon';
 import { getStationName } from '../components/StationPicker';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { mySubscriptions, myTickets } from '../lib/db';
 import { num } from '../lib/format';
+import { configured } from '../lib/supabase';
+import { subFromRow, ticketFromRow, ticketStatus, tripsLeft } from '../lib/ticketing';
 
 type SavedSubscription = {
   id: string;
@@ -40,30 +43,75 @@ export default function GatePage() {
   const { user } = useAuth();
   const { lang, locale, t } = useLanguage();
   const [result, setResult] = useState<Result | null>(null);
+  const [subs, setSubs] = useState<SavedSubscription[]>([]);
+  const [tickets, setTickets] = useState<SavedTicket[]>([]);
+  const [loading, setLoading] = useState(true);
   const isAr = lang === 'ar';
 
-  const getSavedSubs = (): SavedSubscription[] => {
-    if (!user) return [];
-    try {
-      const raw = localStorage.getItem(`monogo_subs_${user.id}`);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
     }
-  };
 
-  const getSavedTickets = (): SavedTicket[] => {
-    if (!user) return [];
-    try {
-      const raw = localStorage.getItem(`monogo_tickets_${user.id}`);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
+    // Supabase not configured: old local demo behaviour.
+    if (!configured) {
+      try {
+        const rawSubs = localStorage.getItem(`monogo_subs_${user.id}`);
+        const rawTickets = localStorage.getItem(`monogo_tickets_${user.id}`);
+        if (rawSubs) setSubs(JSON.parse(rawSubs));
+        if (rawTickets) setTickets(JSON.parse(rawTickets));
+      } catch {
+        // ignore
+      }
+      setLoading(false);
+      return;
     }
-  };
 
-  const subs = getSavedSubs();
-  const tickets = getSavedTickets();
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [rows, subRows] = await Promise.all([myTickets(), mySubscriptions()]);
+        const [ticketList, subList] = await Promise.all([
+          Promise.all(rows.map(ticketFromRow)),
+          Promise.all(subRows.map(subFromRow)),
+        ]);
+        if (cancelled) return;
+
+        // Only tickets that can still be scanned.
+        setTickets(
+          ticketList
+            .filter((tk) => ticketStatus(tk) === 'valid')
+            .map((tk) => ({
+              id: tk.id,
+              route: `${tk.from} ← ${tk.to}`,
+              fare: tk.fare,
+              payload: tk.token,
+            })),
+        );
+        setSubs(
+          subList
+            .filter((s) => tripsLeft(s) > 0 && s.exp > Date.now())
+            .map((s) => ({
+              id: s.id,
+              plan: s.plan,
+              zone: s.zone,
+              tripsLeft: tripsLeft(s),
+              tripsTotal: s.tripsTotal,
+              payload: s.token,
+            })),
+        );
+      } catch {
+        // leave the lists empty
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const translateRoute = (routeText: string) => {
     if (!routeText.includes('←')) return getStationName(routeText, lang);
@@ -97,11 +145,13 @@ export default function GatePage() {
         </div>
       )}
 
-      {user && (
+      {user && loading && <p className="auth-sub">{t('common.loading')}</p>}
+
+      {user && !loading && (
         <div className="gate-list-section">
           {subs.length > 0 && (
             <div className="wallet-section">
-              <h3>{isAr ? 'اشتراكاتك' : 'Your subscriptions'}</h3>
+              <h3>{t('tickets.subsHeading')}</h3>
               <div className="gate-items">
                 {subs.map((s) => {
                   const pName = planNames[s.plan]?.[lang] || s.plan;
@@ -112,7 +162,10 @@ export default function GatePage() {
                       <div>
                         <strong>{subTitle}</strong>
                         <small>
-                          {s.id} · {isAr ? `باقي ${num(s.tripsLeft, locale)} من ${num(s.tripsTotal, locale)} رحلة` : `${num(s.tripsLeft, locale)} of ${num(s.tripsTotal, locale)} trips left`}
+                          {s.id} ·{' '}
+                          {isAr
+                            ? `باقي ${num(s.tripsLeft, locale)} من ${num(s.tripsTotal, locale)} رحلة`
+                            : `${num(s.tripsLeft, locale)} of ${num(s.tripsTotal, locale)} trips left`}
                         </small>
                       </div>
                       <span className="scan-pill">{t('gate.scan')}</span>
@@ -125,7 +178,7 @@ export default function GatePage() {
 
           {tickets.length > 0 && (
             <div className="wallet-section">
-              <h3>{isAr ? 'تذاكرك' : 'Your tickets'}</h3>
+              <h3>{t('tickets.ticketsHeading')}</h3>
               <div className="gate-items">
                 {tickets.map((tItem) => {
                   const routeName = translateRoute(tItem.route);
@@ -142,6 +195,12 @@ export default function GatePage() {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {subs.length === 0 && tickets.length === 0 && (
+            <div className="result-card empty-result">
+              <p>{t('gate.noneYet')}</p>
             </div>
           )}
         </div>
