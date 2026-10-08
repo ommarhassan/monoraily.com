@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { brand } from '../config/brand';
 import { fareForStops, halfTicketEligibility, ticketKindLabels, type TicketKind } from '../data/fares';
+import { useLanguage } from '../i18n/LanguageContext';
 import { num } from '../lib/format';
 import type { Route } from '../lib/routing';
 import { supabase } from '../lib/supabase';
 import { categoryLabels, myVerification, type MyVerification } from '../lib/verification';
 import Icon from './Icon';
+import { getStationName } from './StationPicker';
 
 const MAX_PASSENGERS = 7;
 
@@ -20,12 +22,19 @@ async function errorCode(error: unknown): Promise<string | null> {
   return typeof body?.error === 'string' ? body.error : null;
 }
 
-const errorMessages: Record<string, string> = {
+const errorMessagesAr: Record<string, string> = {
   half_requires_verification: 'نصف التذكرة محتاج توثيق ساري لحسابك.',
   half_single_passenger: 'نصف التذكرة لراكب واحد بس.',
 };
 
+const errorMessagesEn: Record<string, string> = {
+  half_requires_verification: 'Half fare requires active account verification.',
+  half_single_passenger: 'Half fare is for one passenger only.',
+};
+
 export default function TicketModal({ route, onClose, onVerify }: Props) {
+  const { lang, dir, locale } = useLanguage();
+  const isAr = lang === 'ar';
   const { user, profile } = useAuth();
   const [name, setName] = useState(profile?.full_name ?? '');
   const [kind, setKind] = useState<TicketKind>('full');
@@ -36,8 +45,10 @@ export default function TicketModal({ route, onClose, onVerify }: Props) {
 
   const unitPrice = fareForStops(route.stops, kind);
   const price = unitPrice * passengers;
-  const from = route.names[0];
-  const to = route.names[route.names.length - 1];
+  const rawFrom = route.names[0];
+  const rawTo = route.names[route.names.length - 1];
+  const fromName = getStationName(rawFrom, lang);
+  const toName = getStationName(rawTo, lang);
   const halfAllowed = Boolean(verification?.category);
   const blockedHalf = kind === 'half' && !halfAllowed;
 
@@ -62,23 +73,40 @@ export default function TicketModal({ route, onClose, onVerify }: Props) {
     setBusy(true);
     setErrorText(null);
     try {
-      if (!supabase || !user) throw new Error('not signed in');
+      if (!user) {
+        setErrorText(isAr ? 'سجّل دخولك الأول لحسابك عشان تقدر تحجز وتدفع.' : 'Please sign in to your account first to book and pay.');
+        setBusy(false);
+        return;
+      }
+      if (!supabase) throw new Error('Supabase not connected');
       const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: { name: name.trim(), from, to, kind, passengers },
+        body: { name: name.trim(), from: rawFrom, to: rawTo, kind, passengers },
       });
       if (error || !data?.checkout_url) {
         const code = await errorCode(error);
-        setErrorText((code && errorMessages[code]) || 'حصلت مشكلة وإحنا بنبدأ الدفع. جرّب تاني.');
+        const errMap = isAr ? errorMessagesAr : errorMessagesEn;
+        const fallbackErr = isAr
+          ? 'حصلت مشكلة وإحنا بنبدأ الدفع. جرّب تاني.'
+          : 'An error occurred while initiating payment. Please try again.';
+        setErrorText((code && errMap[code]) || fallbackErr);
         setBusy(false);
         return;
       }
       window.location.href = data.checkout_url; // redirect to Paymob's checkout page
     } catch (e) {
       console.error('payment start failed', e);
-      setErrorText('حصلت مشكلة وإحنا بنبدأ الدفع. جرّب تاني.');
+      setErrorText(isAr ? 'حصلت مشكلة وإحنا بنبدأ الدفع. جرّب تاني.' : 'An error occurred while initiating payment. Please try again.');
       setBusy(false);
     }
   };
+
+  const categoryName = verification?.category
+    ? isAr
+      ? categoryLabels[verification.category]
+      : verification.category === 'senior'
+      ? 'Seniors (over 60)'
+      : 'People with disabilities'
+    : '';
 
   return (
     <div
@@ -88,33 +116,35 @@ export default function TicketModal({ route, onClose, onVerify }: Props) {
       }}
       role="presentation"
     >
-      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" dir="rtl">
-        <button className="modal-close" onClick={onClose} aria-label="إغلاق">
+      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" dir={dir}>
+        <button className="modal-close" onClick={onClose} aria-label={isAr ? 'إغلاق' : 'Close'}>
           <Icon name="close" size={20} />
         </button>
 
         <div className="modal-icon">
           <Icon name="ticket" size={26} />
         </div>
-        <span className="eyebrow green">احجز تذكرتك</span>
-        <h2 id="modal-title">ادفع واستلم تذكرة QR.</h2>
+        <span className="eyebrow green">{isAr ? 'احجز تذكرتك' : 'Book Your Ticket'}</span>
+        <h2 id="modal-title">{isAr ? 'ادفع واستلم تذكرة QR.' : 'Pay & Receive QR Ticket.'}</h2>
         <p className="modal-copy">
-          الدفع هنا تجريبي ومفيش أي فلوس بتتسحب. التذكرة بتشتغل على بوابة {brand.name} التجريبية بس.
+          {isAr
+            ? `الدفع هنا تجريبي ومفيش أي فلوس بتتسحب. التذكرة بتشتغل على بوابة ${brand.name} التجريبية بس.`
+            : `Payment here is a demo and no money is charged. The ticket works on the ${brand.name} demo gate only.`}
         </p>
 
         <div className="modal-route">
           <div>
-            <small>من</small>
-            <strong>{from}</strong>
+            <small>{isAr ? 'من' : 'From'}</small>
+            <strong>{fromName}</strong>
           </div>
           <Icon name="arrow" size={20} />
           <div>
-            <small>إلى</small>
-            <strong>{to}</strong>
+            <small>{isAr ? 'إلى' : 'To'}</small>
+            <strong>{toName}</strong>
           </div>
         </div>
 
-        <div className="pay-options" role="radiogroup" aria-label="نوع التذكرة">
+        <div className="pay-options" role="radiogroup" aria-label={isAr ? 'نوع التذكرة' : 'Ticket Type'}>
           {(Object.keys(ticketKindLabels) as TicketKind[]).map((k) => (
             <button
               key={k}
@@ -124,7 +154,7 @@ export default function TicketModal({ route, onClose, onVerify }: Props) {
               onClick={() => chooseKind(k)}
               disabled={busy}
             >
-              {ticketKindLabels[k]}
+              {isAr ? ticketKindLabels[k] : k === 'full' ? 'Full ticket' : 'Half ticket'}
             </button>
           ))}
         </div>
@@ -132,38 +162,42 @@ export default function TicketModal({ route, onClose, onVerify }: Props) {
         {kind === 'half' &&
           (halfAllowed && verification?.category ? (
             <p className="modal-copy kind-note">
-              حسابك موثّق ({categoryLabels[verification.category]}) لحد {verification.until}.
+              {isAr
+                ? `حسابك موثّق (${categoryName}) لحد ${verification.until}.`
+                : `Your account is verified (${categoryName}) until ${verification.until}.`}
             </p>
           ) : (
             <>
               <p className="modal-copy kind-note">
-                نصف التذكرة لـ {halfTicketEligibility}، وبيحتاج توثيق حسابك الأول.
+                {isAr
+                  ? `نصف التذكرة لـ ${halfTicketEligibility}، وبيحتاج توثيق حسابك الأول.`
+                  : 'Half ticket is for seniors over 60 & riders with disabilities, requiring account verification.'}
               </p>
               <button
                 className="outline-button full"
                 onClick={onVerify}
                 disabled={busy}
               >
-                وثّق حسابك
+                {isAr ? 'وثّق حسابك' : 'Verify Your Account'}
               </button>
             </>
           ))}
 
         <div className="modal-price">
-          <span>عدد الركاب</span>
+          <span>{isAr ? 'عدد الركاب' : 'Passengers'}</span>
           <span>
             <button
               className="outline-button"
-              aria-label="تقليل عدد الركاب"
+              aria-label={isAr ? 'تقليل عدد الركاب' : 'Decrease passengers'}
               onClick={() => setPassengers((p) => Math.max(1, p - 1))}
               disabled={busy || kind === 'half' || passengers <= 1}
             >
               −
             </button>
-            <strong> {num(passengers)} </strong>
+            <strong> {num(passengers, locale)} </strong>
             <button
               className="outline-button"
-              aria-label="زيادة عدد الركاب"
+              aria-label={isAr ? 'زيادة عدد الركاب' : 'Increase passengers'}
               onClick={() => setPassengers((p) => Math.min(MAX_PASSENGERS, p + 1))}
               disabled={busy || kind === 'half' || passengers >= MAX_PASSENGERS}
             >
@@ -173,17 +207,21 @@ export default function TicketModal({ route, onClose, onVerify }: Props) {
         </div>
 
         <div className="modal-price">
-          <span>السعر الإجمالي{passengers > 1 ? ` (${num(unitPrice)} جنيه للراكب)` : ''}</span>
-          <strong>{num(price)} جنيه</strong>
+          <span>
+            {isAr
+              ? `السعر الإجمالي${passengers > 1 ? ` (${num(unitPrice, locale)} جنيه للراكب)` : ''}`
+              : `Total Price${passengers > 1 ? ` (${num(unitPrice, locale)} EGP / rider)` : ''}`}
+          </span>
+          <strong>{num(price, locale)} {isAr ? 'جنيه' : 'EGP'}</strong>
         </div>
 
         <label className="name-label" htmlFor="rider-name">
-          اسم الراكب
+          {isAr ? 'اسم الراكب' : 'Passenger Name'}
         </label>
         <input
           id="rider-name"
           className="name-input"
-          placeholder="الاسم اللي هيتكتب على التذكرة"
+          placeholder={isAr ? 'الاسم اللي هيتكتب على التذكرة' : 'Name to appear on the ticket'}
           maxLength={50}
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -202,10 +240,10 @@ export default function TicketModal({ route, onClose, onVerify }: Props) {
           onClick={submit}
         >
           {busy ? (
-            'جاري التحويل للدفع…'
+            isAr ? 'جاري التحويل للدفع…' : 'Redirecting to payment…'
           ) : (
             <>
-              ادفع {num(price)} جنيه <Icon name="arrow" size={18} />
+              {isAr ? `ادفع ${num(price, locale)} جنيه` : `Pay ${num(price, locale)} EGP`} <Icon name="arrow" size={18} />
             </>
           )}
         </button>
