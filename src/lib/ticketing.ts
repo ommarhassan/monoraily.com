@@ -20,6 +20,8 @@ export type Ticket = {
   entriesUsed?: number;
   /** Expiry timestamp (ms). */
   exp: number;
+  /** Advance booking: the ticket only works from this moment (ms). Empty = valid from purchase. */
+  validFrom?: number;
   /** Server-signed QR token: `<ticketId>.<signature>`. Empty when the ticket can no longer be used. */
   token: string;
   pay: string;
@@ -63,7 +65,7 @@ export type Verdict =
       tripsTotal: number;
       tripsLeft: number;
     }
-  | { ok: false; reason: 'invalid' | 'expired' | 'used' | 'error'; message: string };
+  | { ok: false; reason: 'invalid' | 'expired' | 'used' | 'not_yet' | 'error'; message: string };
 
 export type TicketStatus = 'valid' | 'used' | 'expired';
 
@@ -80,12 +82,14 @@ const reasonText = {
   invalid: 'رمز غير صحيح أو متلاعب فيه',
   expired: 'انتهت صلاحية التذكرة',
   used: 'التذكرة اتستخدمت قبل كده',
+  not_yet: 'التذكرة لسه ما بدأتش، بتشتغل في يوم السفر المحجوز',
 } as const;
 
 const subReasonText = {
   invalid: reasonText.invalid,
   expired: 'انتهى الاشتراك',
   used: 'رصيد رحلات الاشتراك خلص',
+  not_yet: reasonText.not_yet,
 } as const;
 
 /** Only used when Supabase is not configured (local demo list). */
@@ -95,6 +99,10 @@ const entriesLeft = (t: { passengers?: number; entriesUsed?: number }) => (t.pas
 
 export const ticketStatus = (ticket: Ticket): TicketStatus =>
   entriesLeft(ticket) <= 0 ? 'used' : ticket.exp < Date.now() ? 'expired' : 'valid';
+
+/** Advance booking: bought already, but its day has not started yet. */
+export const isUpcoming = (ticket: Ticket) =>
+  ticketStatus(ticket) === 'valid' && ticket.validFrom !== undefined && ticket.validFrom > Date.now();
 
 export const tripsLeft = (sub: SubPass) => sub.tripsTotal - sub.tripsUsed;
 
@@ -148,6 +156,7 @@ export async function ticketFromRow(row: DbTicket): Promise<Ticket> {
     passengers: row.passengers ?? 1,
     entriesUsed: row.entries_used ?? 0,
     exp: new Date(row.exp).getTime(),
+    validFrom: row.valid_from ? new Date(row.valid_from).getTime() : undefined,
     pay: row.pay,
     token: '',
   };
@@ -248,8 +257,8 @@ export async function scanAtGate(token: string): Promise<Verdict> {
     };
   }
 
-  const reason: 'invalid' | 'expired' | 'used' =
-    data?.reason === 'expired' || data?.reason === 'used' ? data.reason : 'invalid';
+  const reason: 'invalid' | 'expired' | 'used' | 'not_yet' =
+    data?.reason === 'expired' || data?.reason === 'used' || data?.reason === 'not_yet' ? data.reason : 'invalid';
   const texts = id.startsWith('SUB-') ? subReasonText : reasonText;
   return { ok: false, reason, message: texts[reason] };
 }
