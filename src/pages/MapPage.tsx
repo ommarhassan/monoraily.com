@@ -139,37 +139,37 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
   };
 
   return (
-    <div className="subpage w-full min-h-screen bg-slate-100 text-slate-800 p-4 md:p-6 lg:p-8 font-sans dir-rtl">
+    <div className="subpage w-full min-h-screen bg-slate-50 text-slate-800 p-4 md:p-6 lg:p-8 font-sans dir-rtl">
       
-      {/* Top Header Banner */}
-      <div className="max-w-7xl mx-auto mb-6 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-6 rounded-3xl shadow-xl border border-slate-700/50 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      {/* Light Blue Top Header Banner */}
+      <div className="max-w-7xl mx-auto mb-6 bg-gradient-to-r from-sky-50 via-blue-50/60 to-indigo-50 text-slate-900 p-6 rounded-3xl shadow-sm border border-sky-200/80 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-black rounded-full border border-amber-500/30 backdrop-blur-md">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-sky-100 text-sky-900 text-xs font-black rounded-full border border-sky-300">
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping"></span>
             خريطة تفاعلية حديثة 2026
           </div>
-          <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight">
+          <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight">
             خريطة مونوريل القاهرة الكبرى
           </h1>
-          <p className="text-xs md:text-sm text-slate-300 font-medium">
+          <p className="text-xs md:text-sm text-slate-600 font-bold">
             استكشف المحطات والمسارات بسهولة .. اسحب الخريطة وحدد محطة القيام والوصول للحجز المباشر
           </p>
         </div>
 
         {/* Line Quick Stats Badges */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="bg-slate-800/90 hover:bg-slate-800 px-4 py-3 rounded-2xl border border-amber-500/40 flex items-center gap-3 shadow-md transition">
-            <div className="w-4 h-4 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50"></div>
+          <div className="bg-white hover:bg-amber-50/50 px-4 py-3 rounded-2xl border border-amber-300 flex items-center gap-3 shadow-xs transition">
+            <div className="w-4 h-4 rounded-full bg-amber-500 shadow-xs"></div>
             <div>
-              <div className="text-[11px] text-amber-300 font-bold">الخط الشرقي (يعمل)</div>
-              <div className="text-xs font-black text-white">{meta?.['east-nile']?.totalStations || 22} محطة • 56.5 كم</div>
+              <div className="text-[11px] text-amber-800 font-black">الخط الشرقي (يعمل)</div>
+              <div className="text-xs font-black text-slate-900">{meta?.['east-nile']?.totalStations || 22} محطة • 56.5 كم</div>
             </div>
           </div>
-          <div className="bg-slate-800/90 hover:bg-slate-800 px-4 py-3 rounded-2xl border border-sky-500/40 flex items-center gap-3 shadow-md transition">
-            <div className="w-4 h-4 rounded-full bg-sky-400 border-2 border-dashed border-white"></div>
+          <div className="bg-white hover:bg-sky-50/50 px-4 py-3 rounded-2xl border border-sky-300 flex items-center gap-3 shadow-xs transition">
+            <div className="w-4 h-4 rounded-full bg-sky-500 border-2 border-dashed border-white"></div>
             <div>
-              <div className="text-[11px] text-sky-300 font-bold">الخط الغربي (🚧 تحت الإنشاء)</div>
-              <div className="text-xs font-black text-white">{meta?.['west-nile']?.totalStations || 13} محطة • 43.8 كم</div>
+              <div className="text-[11px] text-sky-800 font-black">الخط الغربي (🚧 تحت الإنشاء)</div>
+              <div className="text-xs font-black text-slate-900">{meta?.['west-nile']?.totalStations || 13} محطة • 43.8 كم</div>
             </div>
           </div>
         </div>
@@ -177,7 +177,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
 
       {/* Toast Alert Notice */}
       {toastMessage && (
-        <div className="max-w-7xl mx-auto mb-5 p-4 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 rounded-2xl font-black text-xs shadow-lg border border-amber-300 flex items-center justify-between animate-bounce">
+        <div className="max-w-7xl mx-auto mb-5 p-4 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 rounded-2xl font-black text-xs shadow-md border border-amber-300 flex items-center justify-between animate-bounce">
           <div className="flex items-center gap-2">
             <span className="text-lg">🚧</span>
             <span className="text-sm">{toastMessage}</span>
@@ -194,9 +194,9 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
           
           <div 
             onClick={() => setSelectedLine('east-nile')}
-            className={`p-5 rounded-3xl border-2 transition-all duration-200 cursor-pointer shadow-md transform hover:-translate-y-1 ${
+            className={`p-5 rounded-3xl border-2 transition-all duration-200 cursor-pointer shadow-sm transform hover:-translate-y-1 ${
               selectedLine === 'east-nile' 
-                ? 'bg-gradient-to-br from-amber-500/10 via-amber-50 to-amber-100/50 border-amber-500 ring-4 ring-amber-500/20 shadow-amber-500/10' 
+                ? 'bg-gradient-to-br from-amber-500/10 via-amber-50 to-amber-100/60 border-amber-500 ring-4 ring-amber-500/20 shadow-amber-500/10' 
                 : 'bg-white border-slate-200 hover:border-amber-400'
             }`}
           >
@@ -214,9 +214,9 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
 
           <div 
             onClick={() => setSelectedLine('west-nile')}
-            className={`p-5 rounded-3xl border-2 transition-all duration-200 cursor-pointer shadow-md transform hover:-translate-y-1 ${
+            className={`p-5 rounded-3xl border-2 transition-all duration-200 cursor-pointer shadow-sm transform hover:-translate-y-1 ${
               selectedLine === 'west-nile' 
-                ? 'bg-gradient-to-br from-sky-500/10 via-sky-50 to-sky-100/50 border-sky-500 ring-4 ring-sky-500/20 shadow-sky-500/10' 
+                ? 'bg-gradient-to-br from-sky-500/10 via-sky-50 to-sky-100/60 border-sky-500 ring-4 ring-sky-500/20 shadow-sky-500/10' 
                 : 'bg-white border-slate-200 hover:border-sky-400'
             }`}
           >
@@ -234,9 +234,9 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
 
           <button 
             onClick={() => setSelectedLine(selectedLine === 'all' ? 'east-nile' : 'all')}
-            className={`w-full py-3.5 px-4 text-xs font-black rounded-2xl transition-all shadow-sm border flex items-center justify-center gap-2 active:scale-95 ${
+            className={`w-full py-3.5 px-4 text-xs font-black rounded-2xl transition-all shadow-xs border flex items-center justify-center gap-2 active:scale-95 ${
               selectedLine === 'all'
-                ? 'bg-slate-900 text-white border-slate-800 shadow-md ring-2 ring-slate-400/20'
+                ? 'bg-sky-600 text-white border-sky-700 shadow-md ring-2 ring-sky-300'
                 : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-300'
             }`}
           >
@@ -244,13 +244,13 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
             <span>{selectedLine === 'all' ? 'عرض الخط الشرقي فقط' : 'عرض الشبكة بالكامل'}</span>
           </button>
 
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white p-5 rounded-3xl shadow-lg border border-slate-800 flex flex-col justify-between">
+          <div className="bg-gradient-to-br from-sky-50 via-white to-blue-50 text-slate-900 p-5 rounded-3xl shadow-sm border border-sky-200 flex flex-col justify-between">
             <div>
-              <div className="inline-block px-2.5 py-1 bg-amber-400/20 text-amber-300 text-[10px] font-black rounded-lg border border-amber-400/30 uppercase tracking-wider mb-2">
+              <div className="inline-block px-2.5 py-1 bg-sky-100 text-sky-900 text-[10px] font-black rounded-lg border border-sky-300 uppercase tracking-wider mb-2">
                 رؤية مصر 2030 🇪🇬
               </div>
-              <h4 className="text-base font-black">مواصفات عالمية</h4>
-              <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+              <h4 className="text-base font-black text-slate-900">مواصفات عالمية</h4>
+              <p className="text-xs text-slate-600 font-medium mt-2 leading-relaxed">
                 قطارات كهربائية أحادية السكة صديقة للبيئة بدون سائق بفضل تقنيات الإشارة الحديثة.
               </p>
             </div>
@@ -259,12 +259,12 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
 
         {/* Center Column (6 cols): Topographic Map Canvas */}
         <div className="lg:col-span-6 flex flex-col gap-4">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden relative min-h-[590px] flex flex-col justify-between">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden relative min-h-[590px] flex flex-col justify-between">
             
             {/* Map Canvas Header Toolbar */}
             <div className="p-4 flex flex-wrap items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-md z-20 gap-3">
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-500/50"></span>
+                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-xs"></span>
                 <span className="text-xs font-black text-slate-900">
                   {activeSelectMode === 'origin' ? '📍 انقر لتحديد محطة القيام (من)' : '🏁 انقر لتحديد محطة الوصول (إلى)'}
                 </span>
@@ -396,29 +396,29 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
               </div>
             </div>
 
-            {/* Bottom Route Booking Action Bar */}
-            <div className="p-4 bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 text-white flex flex-col md:flex-row items-center justify-between gap-4 border-t border-slate-800 z-20">
+            {/* Bottom Light Route Booking Action Bar */}
+            <div className="p-4 bg-gradient-to-r from-sky-50 via-white to-blue-50 text-slate-900 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-sky-200 z-20">
               <div className="flex items-center gap-3 w-full md:w-auto">
-                <div className="bg-slate-800/90 px-4 py-2.5 rounded-2xl border border-amber-500/40 flex-1 md:flex-initial min-w-[130px]">
-                  <div className="text-[10px] text-amber-400 font-black uppercase">📍 محطة القيام</div>
-                  <div className="text-xs font-black truncate">{originStation ? getStationName(originStation.name, lang) : 'غير محددة'}</div>
+                <div className="bg-white px-4 py-2.5 rounded-2xl border border-amber-400 flex-1 md:flex-initial min-w-[130px] shadow-2xs">
+                  <div className="text-[10px] text-amber-700 font-black uppercase">📍 محطة القيام</div>
+                  <div className="text-xs font-black text-slate-900 truncate">{originStation ? getStationName(originStation.name, lang) : 'غير محددة'}</div>
                 </div>
 
-                <span className="text-amber-400 font-black text-base">←</span>
+                <span className="text-sky-600 font-black text-base">←</span>
 
-                <div className="bg-slate-800/90 px-4 py-2.5 rounded-2xl border border-sky-500/40 flex-1 md:flex-initial min-w-[130px]">
-                  <div className="text-[10px] text-sky-400 font-black uppercase">🏁 محطة الوصول</div>
-                  <div className="text-xs font-black truncate">{destinationStation ? getStationName(destinationStation.name, lang) : 'غير محددة'}</div>
+                <div className="bg-white px-4 py-2.5 rounded-2xl border border-sky-400 flex-1 md:flex-initial min-w-[130px] shadow-2xs">
+                  <div className="text-[10px] text-sky-700 font-black uppercase">🏁 محطة الوصول</div>
+                  <div className="text-xs font-black text-slate-900 truncate">{destinationStation ? getStationName(destinationStation.name, lang) : 'غير محددة'}</div>
                 </div>
               </div>
 
               <button
                 onClick={handleBookTicket}
                 disabled={!originStationId || !destinationStationId}
-                className={`w-full md:w-auto px-8 py-3.5 text-xs font-black rounded-2xl transition-all duration-200 shadow-lg flex items-center justify-center gap-2 min-w-[260px] ${
+                className={`w-full md:w-auto px-8 py-3.5 text-xs font-black rounded-2xl transition-all duration-200 shadow-md flex items-center justify-center gap-2 min-w-[260px] ${
                   originStationId && destinationStationId
                     ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 cursor-pointer shadow-amber-500/20 active:scale-95 ring-2 ring-amber-300'
-                    : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/60'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
                 }`}
               >
                 <span className="text-sm">🎟️</span>
@@ -470,7 +470,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                 onClick={() => setSelectedLine('all')}
                 className={`py-2 text-xs font-black rounded-xl transition-all duration-150 ${
                   selectedLine === 'all' 
-                    ? 'bg-slate-900 text-white shadow-md' 
+                    ? 'bg-sky-600 text-white shadow-md' 
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
