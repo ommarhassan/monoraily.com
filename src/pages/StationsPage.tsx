@@ -20,40 +20,27 @@ const areaTranslations: Record<string, string> = {
   'الشيخ زايد': 'Sheikh Zayed',
 };
 
-const labelTranslations: Record<string, string> = {
-  'مترو الخط الرابع (مستقبلاً)': 'Metro Line 4 (Future)',
-  'مترو الخط الرابع': 'Metro Line 4',
-  'مترو الخط السادس (مستقبلاً)': 'Metro Line 6 (Future)',
-  'مترو الخط السادس': 'Metro Line 6',
-  'القطار الكهربائي السريع (مستقبلاً)': 'High-Speed Rail (Future)',
-  'القطار الكهربائي السريع': 'High-Speed Rail',
-  'مترو الخط الثالث': 'Metro Line 3',
-  'محطة قطارات الصعيد': 'Upper Egypt Railway Station',
-  'الخط الغربي': 'West Nile Line',
-  'من 6 أكتوبر إلى وادي النيل': 'From 6th of October to Wadi El Nile',
-};
-
 function getAreaName(area: string, lang: string): string {
   if (lang === 'en' && areaTranslations[area]) return areaTranslations[area];
   return area;
 }
 
-function formatLabel(label: any, lang: string): string {
-  if (!label) return '';
-  if (typeof label === 'object' && label !== null) {
-    return lang === 'en' ? (label.en || label.ar || '') : (label.ar || label.en || '');
+function translateConnection(label: string, lang: string): string {
+  if (lang === 'en') {
+    if (label === 'مترو الخط الرابع (مستقبلاً)') return 'Metro Line 4 (Future)';
+    if (label === 'القطار الكهربائي السريع (مستقبلاً)') return 'High-Speed Rail (Future)';
+    if (label === 'مترو الخط السادس (مستقبلاً)') return 'Metro Line 6 (Future)';
+    if (label === 'محطة قطارات الصعيد') return 'Upper Egypt Railway Station';
+    if (label === 'مترو الخط الثالث') return 'Metro Line 3';
   }
-  const str = String(label);
-  if (lang === 'en' && labelTranslations[str]) return labelTranslations[str];
-  return getStationName(str, lang);
+  return getStationName(label, lang);
 }
 
 /** Splits a line's stations into runs that share the same area (Nasr City, New Cairo, New Capital...). */
 function groupByArea(names: string[]) {
   const groups: { area: string; names: string[] }[] = [];
   for (const name of names) {
-    const st = stationById.get(name);
-    const area = st ? st.area : '';
+    const area = stationById.get(name)!.area;
     const last = groups[groups.length - 1];
     if (last && last.area === area) last.names.push(name);
     else groups.push({ area, names: [name] });
@@ -73,7 +60,6 @@ export default function StationsPage() {
   const lineName = isAr ? line.name : 'East Nile Line';
   const westName = isAr ? westNile.name : 'West Nile Line';
   const westStatus = isAr ? westNile.status : 'Trial Operation / Under Construction';
-  const westNoteText = isAr ? westNile.note : 'Trial operation starting soon.';
 
   const westPhases = [
     {
@@ -85,13 +71,13 @@ export default function StationsPage() {
     {
       phase: 2,
       title: isAr
-        ? 'المرحلة الثانية (مقررة في الربع الأول من 2027)'
+        ? 'المرحلة التانية (مقررة في الربع الأول من 2027)'
         : 'Phase 2 (Planned for Q1 2027)',
     },
   ] as const;
 
   return (
-    <div className={`subpage ${isAr ? 'dir-rtl' : 'dir-ltr'}`}>
+    <div className="subpage">
       <div className="page-heading">
         <span className="eyebrow green">{isAr ? 'شبكة المونوريل' : 'Monorail Network'}</span>
         <h1>{isAr ? 'كل محطة، في مكان واحد.' : 'Every station, in one place.'}</h1>
@@ -148,10 +134,10 @@ export default function StationsPage() {
                     <div className="network-station" key={name}>
                       <span className={`network-node ${station.connections.length ? 'interchange' : ''}`} />
                       <span className="network-name">{getStationName(name, lang)}</span>
-                      {station.connections.map((c: any, cIdx: number) => (
-                        <span key={cIdx} className={`interchange-label ${c.status === 'planned' ? 'planned' : ''}`}>
+                      {station.connections.map((c) => (
+                        <span key={c.label} className={`interchange-label ${c.status === 'planned' ? 'planned' : ''}`}>
                           {c.status === 'active' ? (isAr ? 'تبديل: ' : 'Transfer: ') : ''}
-                          {formatLabel(c.label, lang)}
+                          {translateConnection(c.label, lang)}
                         </span>
                       ))}
                       {isTerminal && (
@@ -169,14 +155,14 @@ export default function StationsPage() {
           {/* West Nile: information only, no booking yet */}
           <div className="network-header">
             <div>
-              <span className="eyebrow green">{isAr ? 'قريباً' : 'Coming soon'}</span>
+              <span className="eyebrow green">{isAr ? 'قريبًا' : 'Coming soon'}</span>
               <h2>{westName}</h2>
             </div>
             <span className="network-count">{westStatus}</span>
           </div>
           <p className="source-note">
             {num(westNile.stationCount, locale)} {isAr ? 'محطة' : 'stations'} · {num(westNile.lengthKm, locale)} {isAr ? 'كم.' : 'km.'}{' '}
-            {westNoteText}
+            {isAr ? westNile.note : 'Trial operation starting soon.'}
           </p>
 
           {westPhases.map(({ phase, title }) => (
@@ -189,9 +175,9 @@ export default function StationsPage() {
                     <div className="network-station" key={station.name}>
                       <span className={`network-node ${station.connections.length ? 'interchange' : ''}`} />
                       <span className="network-name">{getStationName(station.name, lang)}</span>
-                      {station.connections.map((c: any, cIdx: number) => (
-                        <span key={cIdx} className="interchange-label planned">
-                          {formatLabel(c, lang)}
+                      {station.connections.map((c) => (
+                        <span key={c} className="interchange-label planned">
+                          {translateConnection(c, lang)}
                         </span>
                       ))}
                     </div>
@@ -214,8 +200,8 @@ export default function StationsPage() {
           <div className="aside-divider" />
           {plannedLines.map((planned) => (
             <div className="aside-planned" key={planned.name}>
-              <span>{isAr ? 'قريباً' : 'Coming soon'}</span>
-              <strong>{isAr ? planned.name : formatLabel(planned.name, lang)}</strong>
+              <span>{isAr ? 'قريبًا' : 'Coming soon'}</span>
+              <strong>{isAr ? planned.name : translateConnection(planned.name, lang)}</strong>
               <small>
                 {isAr
                   ? planned.description
