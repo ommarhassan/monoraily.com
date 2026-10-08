@@ -18,6 +18,7 @@ type AdminDataState = { users: DbProfile[]; tickets: DbTicket[]; subscriptions: 
 
 export default function AdminPage() {
   const { t, locale, lang } = useLanguage();
+  const isAr = lang === 'ar';
   const [data, setData] = useState<AdminDataState | null>(null);
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [workingId, setWorkingId] = useState<string | null>(null);
@@ -96,7 +97,12 @@ export default function AdminPage() {
                 <div>
                   <strong>{r.full_name}</strong>
                   <small>
-                    {categoryLabels[r.category]} · {formatDateTime(r.created_at, locale)}
+                    {isAr
+                      ? categoryLabels[r.category]
+                      : r.category === 'senior'
+                      ? 'Seniors (over 60)'
+                      : 'People with disabilities'}{' '}
+                    · {formatDateTime(r.created_at, locale)}
                   </small>
                 </div>
                 <button className="outline-button" onClick={() => openDocument(r.doc_path)}>
@@ -142,11 +148,27 @@ export default function AdminPage() {
                     : left <= 0
                     ? t('admin.statusNoTrips')
                     : t('admin.statusActive');
+                  const pName = isAr
+                    ? planLabel(s.plan)
+                    : s.plan === 'weekly'
+                    ? 'Weekly'
+                    : s.plan === 'monthly'
+                    ? 'Monthly'
+                    : 'Quarterly';
+                  const zName = isAr
+                    ? zoneLabel(s.zone)
+                    : s.zone === 0
+                    ? 'One zone'
+                    : s.zone === 1
+                    ? 'Two zones'
+                    : s.zone === 2
+                    ? 'Three zones'
+                    : 'Four zones';
                   return (
                     <tr key={s.id}>
                       <td>{s.holder_name}</td>
-                      <td>{planLabel(s.plan)}</td>
-                      <td>{zoneLabel(s.zone)}</td>
+                      <td>{pName}</td>
+                      <td>{zName}</td>
                       <td>
                         {t('admin.tripsLeft', {
                           left: num(Math.max(left, 0), locale),
@@ -183,7 +205,7 @@ export default function AdminPage() {
                   <tr key={tkt.id}>
                     <td>{tkt.rider_name}</td>
                     <td>
-                      {getStationName(tkt.from_station, lang)} ← {getStationName(tkt.to_station, lang)}
+                      {getStationName(tkt.from_station, lang)} {isAr ? '←' : '→'} {getStationName(tkt.to_station, lang)}
                     </td>
                     <td>{num(tkt.fare, locale)}</td>
                     <td>{formatDateTime(tkt.created_at, locale)}</td>
