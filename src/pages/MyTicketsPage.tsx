@@ -3,7 +3,10 @@ import Icon from '../components/Icon';
 import { getStationName } from '../components/StationPicker';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { mySubscriptions, myTickets } from '../lib/db';
 import { formatDate, formatTime, num } from '../lib/format';
+import { configured } from '../lib/supabase';
+import { qrImage, subFromRow, ticketFromRow, ticketStatus, tripsLeft } from '../lib/ticketing';
 
 type SavedSubscription = {
   id: string;
@@ -23,12 +26,15 @@ type SavedTicket = {
   route: string;
   fare: number;
   kind: 'full' | 'half';
-  status: 'valid' | 'expired';
+  status: 'valid' | 'used' | 'expired';
   expiresAt: string;
   payload: string;
 };
 
 type Props = { onPlan: () => void; justPaid?: string | null };
+
+const POLL_MS = 2000;
+const POLL_MAX_ATTEMPTS = 10;
 
 const planNames: Record<string, { ar: string; en: string }> = {
   weekly: { ar: 'أسبوعي', en: 'Weekly' },
@@ -54,28 +60,111 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
   const { lang, locale, t } = useLanguage();
   const [subs, setSubs] = useState<SavedSubscription[]>([]);
   const [tickets, setTickets] = useState<SavedTicket[]>([]);
+  const [loading, setLoading] = useState(configured);
+  const [qrs, setQrs] = useState<Record<string, string>>({});
   const isAr = lang === 'ar';
 
+  // Load from Supabase (paid tickets live there). After a payment keep checking for ~20 seconds,
+  // because the webhook can arrive a moment after the customer is redirected back.
   useEffect(() => {
     if (!user) return;
-    try {
-      const rawSubs = localStorage.getItem(`monogo_subs_${user.id}`);
-      const rawTickets = localStorage.getItem(`monogo_tickets_${user.id}`);
-      if (rawSubs) setSubs(JSON.parse(rawSubs));
-      if (rawTickets) setTickets(JSON.parse(rawTickets));
-    } catch {
-      // ignore
+
+    // Supabase not configured: keep the old local demo behaviour.
+    if (!configured) {
+      try {
+        const rawSubs = localStorage.getItem(`monogo_subs_${user.id}`);
+        const rawTickets = localStorage.getItem(`monogo_tickets_${user.id}`);
+        if (rawSubs) setSubs(JSON.parse(rawSubs));
+        if (rawTickets) setTickets(JSON.parse(rawTickets));
+      } catch {
+        // ignore
+      }
+      setLoading(false);
+      return;
     }
-  }, [user]);
+
+    let cancelled = false;
+    let attempts = 0;
+    let timer: number | undefined;
+
+    const load = async () => {
+      const [rows, subRows] = await Promise.all([myTickets(), mySubscriptions()]);
+      const [ticketList, subList] = await Promise.all([
+        Promise.all(rows.map(ticketFromRow)),
+        Promise.all(subRows.map(subFromRow)),
+      ]);
+      if (cancelled) return;
+
+      setTickets(
+        ticketList.map((tk) => ({
+          id: tk.id,
+          userId: user.id,
+          route: `${tk.from} ← ${tk.to}`,
+          fare: tk.fare,
+          kind: tk.kind,
+          status: ticketStatus(tk),
+          expiresAt: new Date(tk.exp).toISOString(),
+          payload: tk.token,
+        })),
+      );
+      setSubs(
+        subList.map((s) => ({
+          id: s.id,
+          userId: user.id,
+          plan: s.plan,
+          zone: s.zone,
+          holderName: s.name,
+          tripsLeft: tripsLeft(s),
+          tripsTotal: s.tripsTotal,
+          expiresAt: new Date(s.exp).toISOString(),
+          payload: s.token,
+        })),
+      );
+      setLoading(false);
+
+      const found =
+        !justPaid || ticketList.some((x) => x.id === justPaid) || subList.some((x) => x.id === justPaid);
+      attempts += 1;
+      if (found || attempts >= POLL_MAX_ATTEMPTS) return;
+      timer = window.setTimeout(load, POLL_MS);
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [user?.id, justPaid]);
+
+  // QR codes are drawn in the browser: the signed token never goes to an outside service.
+  useEffect(() => {
+    let cancelled = false;
+    [...subs, ...tickets].forEach(async (item) => {
+      if (!item.payload) return;
+      const url = await qrImage(item.payload);
+      if (!cancelled) setQrs((current) => ({ ...current, [item.id]: url }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [subs, tickets]);
 
   const justPaidSub = justPaid?.startsWith('SUB-') ? subs.find((s) => s.id === justPaid) : null;
-  const justPaidTicket = justPaid?.startsWith('MN-') || justPaid?.startsWith('PAY-') ? tickets.find((t) => t.id === justPaid) : null;
+  const justPaidTicket =
+    justPaid && !justPaid.startsWith('SUB-') ? tickets.find((tk) => tk.id === justPaid) : null;
 
   const translateRoute = (routeText: string) => {
     if (!routeText.includes('←')) return getStationName(routeText, lang);
     const [from, to] = routeText.split('←').map((s) => s.trim());
     return `${getStationName(from, lang)} ← ${getStationName(to, lang)}`;
   };
+
+  const ticketStatusTag = (status: SavedTicket['status']) =>
+    status === 'valid'
+      ? isAr ? 'صالحة' : 'Valid'
+      : status === 'used'
+        ? isAr ? 'مستخدمة' : 'Used'
+        : isAr ? 'منتهية' : 'Expired';
 
   return (
     <div className="subpage">
@@ -85,7 +174,7 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
         <p>{t('tickets.intro')}</p>
       </div>
 
-      {justPaid && (
+      {justPaid && !loading && (
         <div className="paid-banner">
           <span className="eyebrow green">{t('tickets.paidEyebrow')}</span>
           {justPaidTicket && (
@@ -101,7 +190,7 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
                 {t('tickets.subInfo', {
                   plan: planNames[justPaidSub.plan]?.[lang] || justPaidSub.plan,
                   zone: zoneNames[justPaidSub.zone]?.[lang] || justPaidSub.zone,
-                  trips: num(planTrips[justPaidSub.plan] ?? 0, locale),
+                  trips: num(planTrips[justPaidSub.plan] ?? justPaidSub.tripsTotal, locale),
                 })}
               </p>
             </>
@@ -114,6 +203,8 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
           )}
         </div>
       )}
+
+      {loading && <p className="auth-sub">{isAr ? 'بنحمّل…' : 'Loading…'}</p>}
 
       {subs.length > 0 && (
         <div className="wallet-section">
@@ -136,15 +227,17 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
                     <span className={`status-pill ${active ? 'active' : 'expired'}`}>{statusTag}</span>
                     <span className="ticket-id">{s.id}</span>
                   </div>
-                  <div className="ticket-qr-wrap" style={{ textAlign: 'center', padding: '12px' }}>
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(s.payload || s.id)}`}
-                      alt={s.id}
-                      width={160}
-                      height={160}
-                      style={{ borderRadius: '8px' }}
-                    />
-                  </div>
+                  {qrs[s.id] && (
+                    <div className="ticket-qr-wrap" style={{ textAlign: 'center', padding: '12px' }}>
+                      <img
+                        src={qrs[s.id]}
+                        alt={s.id}
+                        width={160}
+                        height={160}
+                        style={{ borderRadius: '8px' }}
+                      />
+                    </div>
+                  )}
                   <div className="ticket-body">
                     <h3>{title}</h3>
                     <p>
@@ -173,22 +266,23 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
             {tickets.map((tItem) => {
               const active = tItem.status === 'valid';
               const kindLabel = tItem.kind === 'half' ? (isAr ? 'نصف تذكرة' : 'Half ticket') : (isAr ? 'تذكرة كاملة' : 'Full ticket');
-              const statusTag = active ? (isAr ? 'صالحة' : 'Valid') : (isAr ? 'منتهية' : 'Expired');
               return (
                 <div className="ticket-card" key={tItem.id}>
                   <div className="ticket-head">
-                    <span className={`status-pill ${active ? 'active' : 'expired'}`}>{statusTag}</span>
+                    <span className={`status-pill ${active ? 'active' : 'expired'}`}>{ticketStatusTag(tItem.status)}</span>
                     <span className="ticket-id">{tItem.id}</span>
                   </div>
-                  <div className="ticket-qr-wrap" style={{ textAlign: 'center', padding: '12px' }}>
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(tItem.payload || tItem.id)}`}
-                      alt={tItem.id}
-                      width={160}
-                      height={160}
-                      style={{ borderRadius: '8px' }}
-                    />
-                  </div>
+                  {qrs[tItem.id] && (
+                    <div className="ticket-qr-wrap" style={{ textAlign: 'center', padding: '12px' }}>
+                      <img
+                        src={qrs[tItem.id]}
+                        alt={tItem.id}
+                        width={160}
+                        height={160}
+                        style={{ borderRadius: '8px' }}
+                      />
+                    </div>
+                  )}
                   <div className="ticket-body">
                     <h3>{translateRoute(tItem.route)}</h3>
                     <p>
@@ -205,7 +299,7 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
         </div>
       )}
 
-      {subs.length === 0 && tickets.length === 0 && !justPaid && (
+      {!loading && subs.length === 0 && tickets.length === 0 && !justPaid && (
         <div className="result-card empty-result">
           <div className="empty-illustration">
             <Icon name="ticket" size={48} />
