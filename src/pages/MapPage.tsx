@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { stations, lineColors, lineMeta } from '../data/network';
+import { stations, lineColors } from '../data/network';
 import { getStationName } from '../components/StationPicker';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -29,9 +29,8 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
   const [hoveredStationId, setHoveredStationId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
 
-  // Cast colors and metadata safely
+  // Cast colors safely
   const colors = lineColors as Record<string, string>;
-  const meta = lineMeta as Record<string, any>;
 
   const eastColor = colors['east-nile'] || '#EAB308';
   const westColor = colors['west-nile'] || '#0284C7';
