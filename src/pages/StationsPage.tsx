@@ -27,11 +27,16 @@ function getAreaName(area: string, lang: string): string {
 
 function translateConnection(label: string, lang: string): string {
   if (lang === 'en') {
-    if (label === 'مترو الخط الرابع (مستقبلاً)') return 'Metro Line 4 (Future)';
-    if (label === 'القطار الكهربائي السريع (مستقبلاً)') return 'High-Speed Rail (Future)';
-    if (label === 'مترو الخط السادس (مستقبلاً)') return 'Metro Line 6 (Future)';
-    if (label === 'محطة قطارات الصعيد') return 'Upper Egypt Railway Station';
-    if (label === 'مترو الخط الثالث') return 'Metro Line 3';
+    const clean = label.replace(/ً/g, 'اً').trim();
+    if (clean.includes('الخط الرابع')) return 'Metro Line 4 (Future)';
+    if (clean.includes('الكهربائي السريع')) return 'High-Speed Rail (Future)';
+    if (clean.includes('الخط السادس')) return 'Metro Line 6 (Future)';
+    if (clean.includes('الصعيد')) return 'Upper Egypt Railway Station';
+    if (clean.includes('الخط الثالث')) return 'Metro Line 3';
+    if (clean.includes('LRT')) return 'LRT Light Rail';
+    if (clean.includes('BRT')) return 'BRT Bus Rapid Transit';
+    if (label === 'خط شرق النيل') return 'East Nile Line';
+    if (label === 'خط غرب النيل') return 'West Nile Line';
   }
   return getStationName(label, lang);
 }
@@ -107,7 +112,9 @@ export default function StationsPage() {
         </div>
         <div className="stat-card">
           <span>{isAr ? 'ساعات التشغيل' : 'Operating Hours'}</span>
-          <strong className="stat-small">{operatingHours}</strong>
+          <strong className="stat-small">
+            {isAr ? operatingHours : '6:00 AM – 7:50 PM (last train)'}
+          </strong>
         </div>
       </div>
 
@@ -162,7 +169,7 @@ export default function StationsPage() {
           </div>
           <p className="source-note">
             {num(westNile.stationCount, locale)} {isAr ? 'محطة' : 'stations'} · {num(westNile.lengthKm, locale)} {isAr ? 'كم.' : 'km.'}{' '}
-            {isAr ? westNile.note : 'Trial operation starting soon.'}
+            {isAr ? westNile.note : 'Trial operation is non-commercial; no official fares are announced yet.'}
           </p>
 
           {westPhases.map(({ phase, title }) => (
