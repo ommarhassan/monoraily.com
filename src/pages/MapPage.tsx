@@ -656,4 +656,177 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                   <div>
                     <div className="text-[10px] text-sky-400 font-bold uppercase">الوصول (إلى)</div>
                     <div className="text-xs font-bold text-white">
-                      {destinationStation ? getStationName(destinationStation.
+                      {destinationStation ? getStationName(destinationStation.name, lang) : 'حددها على الخريطة'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Ticket Booking CTA */}
+              <button
+                onClick={handleBookTicket}
+                disabled={!originStationId || !destinationStationId}
+                className={`w-full md:w-auto px-6 py-3 text-xs font-extrabold rounded-xl transition shadow-md flex items-center justify-center gap-2 ${
+                  originStationId && destinationStationId
+                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 cursor-pointer'
+                    : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                }`}
+              >
+                <span>🎟️</span>
+                <span>
+                  {originStation && destinationStation
+                    ? `حجز تذكرة من (${getStationName(originStation.name, lang)}) إلى (${getStationName(destinationStation.name, lang)})`
+                    : 'حدد المحطتين لحجز التذكرة'}
+                </span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Right Column (3 cols): Interactive Station Picker Panel */}
+        <div className="lg:col-span-3 flex flex-col gap-4">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 flex flex-col min-h-[580px]">
+            
+            {/* Filter Line Switcher */}
+            <div className="flex bg-slate-100 p-1 rounded-2xl mb-4 border border-slate-200">
+              <button
+                onClick={() => setSelectedLine('east-nile')}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+                  selectedLine === 'east-nile'
+                    ? 'bg-amber-400 text-slate-950 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                الشرقي
+              </button>
+              <button
+                onClick={() => setSelectedLine('west-nile')}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+                  selectedLine === 'west-nile'
+                    ? 'bg-sky-500 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                الغربي 🚧
+              </button>
+              <button
+                onClick={() => setSelectedLine('all')}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+                  selectedLine === 'all'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                الكل
+              </button>
+            </div>
+
+            {/* Search Field */}
+            <div className="relative mb-4">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="ابحث عن محطة..."
+                className="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition"
+              />
+              <span className="absolute right-3 top-2.5 text-slate-400 text-sm">🔍</span>
+            </div>
+
+            {/* List Header & Guidance */}
+            <div className="flex items-center justify-between mb-3 text-xs font-bold text-slate-500 px-1">
+              <span>محطات الشبكة ({displayedStations.length})</span>
+              <span className="text-[11px] font-semibold text-amber-600">
+                {activeSelectMode === 'origin' ? 'حدد القيام 📍' : 'حدد الوصول 🏁'}
+              </span>
+            </div>
+
+            {/* Station List */}
+            <div className="flex-1 overflow-y-auto max-h-[400px] space-y-2 pr-1 custom-scrollbar">
+              {displayedStations.length === 0 ? (
+                <div className="text-center py-10 text-slate-400 text-xs">
+                  لا توجد محطات مطابقة
+                </div>
+              ) : (
+                displayedStations.map((st, idx) => {
+                  const isWestLine = hasLine(st, 'west-nile');
+                  const isOrigin = originStationId === st.id;
+                  const isDestination = destinationStationId === st.id;
+                  const isEast = hasLine(st, 'east-nile');
+                  const badgeBg = isEast ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600 border border-dashed border-slate-300';
+
+                  return (
+                    <div
+                      key={st.id}
+                      onClick={() => handleSelectStation(st)}
+                      className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                        isOrigin
+                          ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-md font-extrabold'
+                          : isDestination
+                          ? 'bg-sky-500 text-white border-sky-600 shadow-md font-extrabold'
+                          : isWestLine
+                          ? 'bg-slate-50 opacity-80 border-slate-200 text-slate-600 hover:bg-slate-100'
+                          : 'bg-white hover:bg-slate-50 border-slate-100 text-slate-800 hover:border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span 
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0 ${
+                            isOrigin || isDestination ? 'bg-slate-900 text-white' : badgeBg
+                          }`}
+                        >
+                          {idx + 1}
+                        </span>
+                        <div>
+                          <div className="text-xs font-bold flex items-center gap-1.5">
+                            <span>{getStationName(st.name, lang)}</span>
+                            {isWestLine && <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded font-semibold">تحت الإنشاء 🚧</span>}
+                          </div>
+                          <div className={`text-[11px] ${isOrigin || isDestination ? 'opacity-80' : 'text-slate-500'}`}>
+                            {getStationName(st.area, lang)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        {isOrigin && <span className="text-xs bg-slate-900 text-amber-400 px-2 py-0.5 rounded-full font-bold">القيام 📍</span>}
+                        {isDestination && <span className="text-xs bg-slate-900 text-sky-300 px-2 py-0.5 rounded-full font-bold">الوصول 🏁</span>}
+                        {!isOrigin && !isDestination && isWestLine && <span className="text-[11px] text-slate-400 font-bold">قريباً</span>}
+                        {!isOrigin && !isDestination && !isWestLine && <span className="text-xs text-slate-400">←</span>}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      {/* Bottom Footer Feature Bar */}
+      <div className="max-w-7xl mx-auto mt-6 bg-white border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-amber-400 flex items-center justify-center font-bold text-slate-950">
+            M
+          </div>
+          <div>
+            <div className="font-extrabold text-slate-800">مونوريل القاهرة الكبرى</div>
+            <div className="text-[11px] text-slate-400">ربط أفضل .. لحياة أسهل</div>
+          </div>
+        </div>
+
+        {/* Feature Highlights */}
+        <div className="flex items-center gap-6 text-slate-600 font-medium overflow-x-auto py-1">
+          <span className="flex items-center gap-1.5 whitespace-nowrap">❄️ تكييف كامل</span>
+          <span className="flex items-center gap-1.5 whitespace-nowrap">📶 إنترنت مجاني</span>
+          <span className="flex items-center gap-1.5 whitespace-nowrap">🖥️ شاشات عرض</span>
+          <span className="flex items-center gap-1.5 whitespace-nowrap">💳 دفع إلكتروني</span>
+        </div>
+      </div>
+
+    </div>
+  );
+}
