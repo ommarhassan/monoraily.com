@@ -16,6 +16,8 @@ export type DbTicket = {
   passengers: number;
   entries_used: number;
   line: string;
+  /** Advance booking: the ticket only works from this moment. Null = valid from purchase. */
+  valid_from: string | null;
 };
 
 export type DbSubscription = {
