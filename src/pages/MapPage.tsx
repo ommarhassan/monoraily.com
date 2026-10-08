@@ -16,6 +16,7 @@ const hasLine = (st: any, lineId: string): boolean => {
 
 export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
   const { lang } = useLanguage();
+  const isEn = lang === 'en';
 
   const [originStationId, setOriginStationId] = useState<string | null>('st-1');
   const [destinationStationId, setDestinationStationId] = useState<string | null>('st-5');
@@ -90,7 +91,12 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
 
   const handleSelectStation = (st: any) => {
     if (hasLine(st, 'west-nile')) {
-      setToastMessage(`🚧 محطة (${getStationName(st.name, lang)}) ضمن الخط الغربي (تحت الإنشاء) - قريباً`);
+      const stationName = getStationName(st.name, lang);
+      setToastMessage(
+        isEn
+          ? `🚧 Station (${stationName}) is on West Nile Line (Under Construction) - Coming Soon`
+          : `🚧 محطة (${stationName}) ضمن الخط الغربي (تحت الإنشاء) - قريباً`
+      );
       setTimeout(() => setToastMessage(null), 4000);
       return;
     }
@@ -139,20 +145,22 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
   };
 
   return (
-    <div className="subpage w-full min-h-screen bg-slate-50 text-slate-800 p-4 md:p-6 lg:p-8 font-sans dir-rtl">
+    <div className={`subpage w-full min-h-screen bg-slate-50 text-slate-800 p-4 md:p-6 lg:p-8 font-sans ${isEn ? 'dir-ltr' : 'dir-rtl'}`}>
       
       {/* Light Blue Top Header Banner */}
       <div className="max-w-7xl mx-auto mb-6 bg-gradient-to-r from-sky-50 via-blue-50/60 to-indigo-50 text-slate-900 p-6 rounded-3xl shadow-sm border border-sky-200/80 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-sky-100 text-sky-900 text-xs font-black rounded-full border border-sky-300">
             <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping"></span>
-            خريطة تفاعلية حديثة 2026
+            {isEn ? 'Interactive Map 2026' : 'خريطة تفاعلية حديثة 2026'}
           </div>
           <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight">
-            خريطة مونوريل القاهرة الكبرى
+            {isEn ? 'Greater Cairo Monorail Map' : 'خريطة مونوريل القاهرة الكبرى'}
           </h1>
           <p className="text-xs md:text-sm text-slate-600 font-bold">
-            استكشف المحطات والمسارات بسهولة .. اسحب الخريطة وحدد محطة القيام والوصول للحجز المباشر
+            {isEn
+              ? 'Explore stations & lines easily .. Drag map & select origin / destination for direct booking'
+              : 'استكشف المحطات والمسارات بسهولة .. اسحب الخريطة وحدد محطة القيام والوصول للحجز المباشر'}
           </p>
         </div>
 
@@ -161,15 +169,27 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
           <div className="bg-white hover:bg-amber-50/50 px-4 py-3 rounded-2xl border border-amber-300 flex items-center gap-3 shadow-xs transition">
             <div className="w-4 h-4 rounded-full bg-amber-500 shadow-xs"></div>
             <div>
-              <div className="text-[11px] text-amber-800 font-black">الخط الشرقي (يعمل)</div>
-              <div className="text-xs font-black text-slate-900">{meta?.['east-nile']?.totalStations || 22} محطة • 56.5 كم</div>
+              <div className="text-[11px] text-amber-800 font-black">
+                {isEn ? 'East Line (Active)' : 'الخط الشرقي (يعمل)'}
+              </div>
+              <div className="text-xs font-black text-slate-900">
+                {isEn
+                  ? `${meta?.['east-nile']?.totalStations || 22} Stations • 56.5 km`
+                  : `${meta?.['east-nile']?.totalStations || 22} محطة • 56.5 كم`}
+              </div>
             </div>
           </div>
           <div className="bg-white hover:bg-sky-50/50 px-4 py-3 rounded-2xl border border-sky-300 flex items-center gap-3 shadow-xs transition">
             <div className="w-4 h-4 rounded-full bg-sky-500 border-2 border-dashed border-white"></div>
             <div>
-              <div className="text-[11px] text-sky-800 font-black">الخط الغربي (🚧 تحت الإنشاء)</div>
-              <div className="text-xs font-black text-slate-900">{meta?.['west-nile']?.totalStations || 13} محطة • 43.8 كم</div>
+              <div className="text-[11px] text-sky-800 font-black">
+                {isEn ? 'West Line (🚧 Construction)' : 'الخط الغربي (🚧 تحت الإنشاء)'}
+              </div>
+              <div className="text-xs font-black text-slate-900">
+                {isEn
+                  ? `${meta?.['west-nile']?.totalStations || 13} Stations • 43.8 km`
+                  : `${meta?.['west-nile']?.totalStations || 13} محطة • 43.8 كم`}
+              </div>
             </div>
           </div>
         </div>
@@ -202,13 +222,15 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
           >
             <div className="flex items-center justify-between mb-2">
               <span className="px-3 py-1 rounded-xl text-xs font-black bg-amber-500 text-slate-950 shadow-xs">
-                الخط الشرقي
+                {isEn ? 'East Line' : 'الخط الشرقي'}
               </span>
               <span className="w-3.5 h-3.5 rounded-full bg-amber-500 animate-pulse"></span>
             </div>
-            <p className="text-xs font-bold text-slate-700 mt-3 mb-2">مدينة نصر ↔ العاصمة الإدارية</p>
+            <p className="text-xs font-bold text-slate-700 mt-3 mb-2">
+              {isEn ? 'Nasr City ↔ New Capital' : 'مدينة نصر ↔ العاصمة الإدارية'}
+            </p>
             <div className="text-[11px] font-black text-amber-800 bg-amber-100/80 px-3 py-1.5 rounded-xl inline-block border border-amber-300/60">
-              ⚡ 22 محطة • 56.5 كم • 80 كم/س
+              {isEn ? '⚡ 22 Stations • 56.5 km • 80 km/h' : '⚡ 22 محطة • 56.5 كم • 80 كم/س'}
             </div>
           </div>
 
@@ -222,13 +244,17 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
           >
             <div className="flex items-center justify-between mb-2">
               <span className="px-3 py-1 rounded-xl text-xs font-black bg-sky-500 text-white shadow-xs">
-                الخط الغربي
+                {isEn ? 'West Line' : 'الخط الغربي'}
               </span>
-              <span className="text-xs text-amber-600 font-black bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-300">🚧 قريباً</span>
+              <span className="text-xs text-amber-600 font-black bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-300">
+                {isEn ? '🚧 Soon' : '🚧 قريباً'}
+              </span>
             </div>
-            <p className="text-xs font-bold text-slate-700 mt-3 mb-2">6 أكتوبر ↔ وادي النيل</p>
+            <p className="text-xs font-bold text-slate-700 mt-3 mb-2">
+              {isEn ? '6th October ↔ Wadi El Nile' : '6 أكتوبر ↔ وادي النيل'}
+            </p>
             <div className="text-[11px] font-black text-sky-800 bg-sky-100/80 px-3 py-1.5 rounded-xl inline-block border border-sky-300/60">
-              🚧 13 محطة • 43.8 كم • تحت الإنشاء
+              {isEn ? '🚧 13 Stations • 43.8 km • Construction' : '🚧 13 محطة • 43.8 كم • تحت الإنشاء'}
             </div>
           </div>
 
@@ -241,17 +267,25 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
             }`}
           >
             <span>🗺️</span>
-            <span>{selectedLine === 'all' ? 'عرض الخط الشرقي فقط' : 'عرض الشبكة بالكامل'}</span>
+            <span>
+              {selectedLine === 'all'
+                ? isEn ? 'Show East Line Only' : 'عرض الخط الشرقي فقط'
+                : isEn ? 'Show Full Network' : 'عرض الشبكة بالكامل'}
+            </span>
           </button>
 
           <div className="bg-gradient-to-br from-sky-50 via-white to-blue-50 text-slate-900 p-5 rounded-3xl shadow-sm border border-sky-200 flex flex-col justify-between">
             <div>
               <div className="inline-block px-2.5 py-1 bg-sky-100 text-sky-900 text-[10px] font-black rounded-lg border border-sky-300 uppercase tracking-wider mb-2">
-                رؤية مصر 2030 🇪🇬
+                {isEn ? 'EGYPT VISION 2030 🇪🇬' : 'رؤية مصر 2030 🇪🇬'}
               </div>
-              <h4 className="text-base font-black text-slate-900">مواصفات عالمية</h4>
+              <h4 className="text-base font-black text-slate-900">
+                {isEn ? 'World Class Standards' : 'مواصفات عالمية'}
+              </h4>
               <p className="text-xs text-slate-600 font-medium mt-2 leading-relaxed">
-                قطارات كهربائية أحادية السكة صديقة للبيئة بدون سائق بفضل تقنيات الإشارة الحديثة.
+                {isEn
+                  ? 'Eco-friendly driverless monorail trains equipped with modern CBTC signaling systems.'
+                  : 'قطارات كهربائية أحادية السكة صديقة للبيئة بدون سائق بفضل تقنيات الإشارة الحديثة.'}
               </p>
             </div>
           </div>
@@ -266,7 +300,9 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-xs"></span>
                 <span className="text-xs font-black text-slate-900">
-                  {activeSelectMode === 'origin' ? '📍 انقر لتحديد محطة القيام (من)' : '🏁 انقر لتحديد محطة الوصول (إلى)'}
+                  {activeSelectMode === 'origin'
+                    ? isEn ? '📍 Click to select Origin Station (From)' : '📍 انقر لتحديد محطة القيام (من)'
+                    : isEn ? '🏁 Click to select Destination Station (To)' : '🏁 انقر لتحديد محطة الوصول (إلى)'}
                 </span>
               </div>
 
@@ -275,15 +311,15 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                 <button
                   onClick={handleResetRoute}
                   className="px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition shadow-xs active:scale-95 flex items-center gap-1"
-                  title="إعادة ضبط المحطات المحدد"
+                  title={isEn ? 'Reset route selection' : 'إعادة ضبط المحطات المحدد'}
                 >
                   <span>⟲</span>
-                  <span>مسح التحديد</span>
+                  <span>{isEn ? 'Reset' : 'مسح التحديد'}</span>
                 </button>
                 <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-xs">
                   <button onClick={() => setZoom((z) => Math.min(2.2, z + 0.2))} className="w-8 h-8 rounded-lg bg-white font-black text-slate-800 hover:bg-amber-50 hover:text-amber-600 transition border border-slate-200 shadow-2xs active:scale-95 flex items-center justify-center">+</button>
                   <button onClick={() => setZoom((z) => Math.max(0.6, z - 0.2))} className="w-8 h-8 rounded-lg bg-white font-black text-slate-800 hover:bg-amber-50 hover:text-amber-600 transition border border-slate-200 shadow-2xs active:scale-95 flex items-center justify-center">-</button>
-                  <button onClick={handleResetView} className="w-8 h-8 rounded-lg bg-white font-bold text-xs text-slate-800 hover:bg-amber-50 hover:text-amber-600 transition border border-slate-200 shadow-2xs active:scale-95 flex items-center justify-center" title="تكبير أصلي">⟲</button>
+                  <button onClick={handleResetView} className="w-8 h-8 rounded-lg bg-white font-bold text-xs text-slate-800 hover:bg-amber-50 hover:text-amber-600 transition border border-slate-200 shadow-2xs active:scale-95 flex items-center justify-center" title={isEn ? 'Reset Zoom' : 'تكبير أصلي'}>⟲</button>
                 </div>
               </div>
             </div>
@@ -322,13 +358,23 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                   {/* River Nile with Outer Bank Stroke */}
                   <path d="M 460 0 C 470 120, 510 240, 480 360 C 450 440, 480 530, 500 620" fill="none" stroke="#7dd3fc" strokeWidth="46" opacity="0.4" strokeLinecap="round" />
                   <path d="M 460 0 C 470 120, 510 240, 480 360 C 450 440, 480 530, 500 620" fill="none" stroke="url(#nileGrad3D)" strokeWidth="36" strokeLinecap="round" />
-                  <text x="495" y="280" fill="#ffffff" fontSize="13" fontWeight="extrabold" transform="rotate(-75 495 280)">نهر النيل 🌊</text>
+                  <text x="495" y="280" fill="#ffffff" fontSize="13" fontWeight="extrabold" transform="rotate(-75 495 280)">
+                    {isEn ? 'Nile River 🌊' : 'نهر النيل 🌊'}
+                  </text>
 
                   {/* Topographic Area Labels */}
-                  <text x="830" y="80" fill="#334155" fontSize="14" fontWeight="extrabold">العاصمة الإدارية الجديدة</text>
-                  <text x="680" y="440" fill="#475569" fontSize="14" fontWeight="bold">القاهرة الجديدة</text>
-                  <text x="475" y="320" fill="#0f172a" fontSize="16" fontWeight="black">القاهرة الكبرى</text>
-                  <text x="210" y="490" fill="#334155" fontSize="14" fontWeight="extrabold">مدينة 6 أكتوبر</text>
+                  <text x="830" y="80" fill="#334155" fontSize="14" fontWeight="extrabold">
+                    {isEn ? 'New Admin Capital' : 'العاصمة الإدارية الجديدة'}
+                  </text>
+                  <text x="680" y="440" fill="#475569" fontSize="14" fontWeight="bold">
+                    {isEn ? 'New Cairo' : 'القاهرة الجديدة'}
+                  </text>
+                  <text x="475" y="320" fill="#0f172a" fontSize="16" fontWeight="black">
+                    {isEn ? 'Greater Cairo' : 'القاهرة الكبرى'}
+                  </text>
+                  <text x="210" y="490" fill="#334155" fontSize="14" fontWeight="extrabold">
+                    {isEn ? '6th of October City' : 'مدينة 6 أكتوبر'}
+                  </text>
 
                   {/* West Line Dashed Polyline */}
                   {(selectedLine === 'all' || selectedLine === 'west-nile') && (
@@ -369,6 +415,8 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                     if (isOrigin) nodeColor = '#f59e0b';
                     if (isDestination) nodeColor = '#0284c7';
 
+                    const stName = getStationName(st.name, lang);
+
                     return (
                       <g
                         key={st.id}
@@ -385,7 +433,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                           <g transform="translate(0, -22)">
                             <rect x="-58" y="-16" width="116" height="25" rx="12" fill={isOrigin ? '#f59e0b' : isDestination ? '#0284c7' : '#0f172a'} />
                             <text x="0" y="1" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold">
-                              {isOrigin ? `📍 ${getStationName(st.name, lang)}` : isDestination ? `🏁 ${getStationName(st.name, lang)}` : isWestLine ? `🚧 ${getStationName(st.name, lang)}` : getStationName(st.name, lang)}
+                              {isOrigin ? `📍 ${stName}` : isDestination ? `🏁 ${stName}` : isWestLine ? `🚧 ${stName}` : stName}
                             </text>
                           </g>
                         )}
@@ -400,15 +448,23 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
             <div className="p-4 bg-gradient-to-r from-sky-50 via-white to-blue-50 text-slate-900 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-sky-200 z-20">
               <div className="flex items-center gap-3 w-full md:w-auto">
                 <div className="bg-white px-4 py-2.5 rounded-2xl border border-amber-400 flex-1 md:flex-initial min-w-[130px] shadow-2xs">
-                  <div className="text-[10px] text-amber-700 font-black uppercase">📍 محطة القيام</div>
-                  <div className="text-xs font-black text-slate-900 truncate">{originStation ? getStationName(originStation.name, lang) : 'غير محددة'}</div>
+                  <div className="text-[10px] text-amber-700 font-black uppercase">
+                    {isEn ? '📍 Origin' : '📍 محطة القيام'}
+                  </div>
+                  <div className="text-xs font-black text-slate-900 truncate">
+                    {originStation ? getStationName(originStation.name, lang) : isEn ? 'Not Selected' : 'غير محددة'}
+                  </div>
                 </div>
 
-                <span className="text-sky-600 font-black text-base">←</span>
+                <span className="text-sky-600 font-black text-base">{isEn ? '→' : '←'}</span>
 
                 <div className="bg-white px-4 py-2.5 rounded-2xl border border-sky-400 flex-1 md:flex-initial min-w-[130px] shadow-2xs">
-                  <div className="text-[10px] text-sky-700 font-black uppercase">🏁 محطة الوصول</div>
-                  <div className="text-xs font-black text-slate-900 truncate">{destinationStation ? getStationName(destinationStation.name, lang) : 'غير محددة'}</div>
+                  <div className="text-[10px] text-sky-700 font-black uppercase">
+                    {isEn ? '🏁 Destination' : '🏁 محطة الوصول'}
+                  </div>
+                  <div className="text-xs font-black text-slate-900 truncate">
+                    {destinationStation ? getStationName(destinationStation.name, lang) : isEn ? 'Not Selected' : 'غير محددة'}
+                  </div>
                 </div>
               </div>
 
@@ -424,8 +480,10 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                 <span className="text-sm">🎟️</span>
                 <span>
                   {originStation && destinationStation
-                    ? `حجز التذكرة من (${getStationName(originStation.name, lang)}) إلى (${getStationName(destinationStation.name, lang)})`
-                    : 'انقر على المحطتين لتحديد التذكرة'}
+                    ? isEn
+                      ? `Book Ticket from (${getStationName(originStation.name, lang)}) to (${getStationName(destinationStation.name, lang)})`
+                      : `حجز التذكرة من (${getStationName(originStation.name, lang)}) إلى (${getStationName(destinationStation.name, lang)})`
+                    : isEn ? 'Select both stations to book' : 'انقر على المحطتين لتحديد التذكرة'}
                 </span>
               </button>
             </div>
@@ -439,9 +497,9 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
             
             {/* Header & Line Switcher Segmented Control */}
             <h3 className="text-sm font-black text-slate-900 mb-3 flex items-center justify-between">
-              <span>قائمة المحطات</span>
+              <span>{isEn ? 'Station List' : 'قائمة المحطات'}</span>
               <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
-                {displayedStations.length} محطة
+                {isEn ? `${displayedStations.length} Stations` : `${displayedStations.length} محطة`}
               </span>
             </h3>
 
@@ -454,7 +512,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                الشرقي
+                {isEn ? 'East' : 'الشرقي'}
               </button>
               <button
                 onClick={() => setSelectedLine('west-nile')}
@@ -464,7 +522,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                الغربي 🚧
+                {isEn ? 'West 🚧' : 'الغربي 🚧'}
               </button>
               <button
                 onClick={() => setSelectedLine('all')}
@@ -474,7 +532,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                الكل
+                {isEn ? 'All' : 'الكل'}
               </button>
             </div>
 
@@ -484,10 +542,10 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ابحث باسم المحطة..."
-                className="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition"
+                placeholder={isEn ? 'Search station name...' : 'ابحث باسم المحطة...'}
+                className={`w-full ${isEn ? 'pl-10 pr-4' : 'pl-4 pr-10'} py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition`}
               />
-              <span className="absolute right-3.5 top-3 text-slate-400 text-sm">🔍</span>
+              <span className={`absolute ${isEn ? 'left-3.5' : 'right-3.5'} top-3 text-slate-400 text-sm`}>🔍</span>
             </div>
 
             {/* Station List Buttons */}
@@ -504,7 +562,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                     key={st.id}
                     type="button"
                     onClick={() => handleSelectStation(st)}
-                    className={`w-full p-3.5 rounded-2xl border-2 transition-all duration-150 text-right cursor-pointer flex items-center justify-between min-h-[52px] transform active:scale-98 ${
+                    className={`w-full p-3.5 rounded-2xl border-2 transition-all duration-150 ${isEn ? 'text-left' : 'text-right'} cursor-pointer flex items-center justify-between min-h-[52px] transform active:scale-98 ${
                       isOrigin
                         ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 border-amber-600 shadow-md shadow-amber-500/20 font-black'
                         : isDestination
@@ -530,11 +588,11 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                       </div>
                     </div>
 
-                    <div className="shrink-0 mr-2">
-                      {isOrigin && <span className="text-[10px] bg-slate-950 text-amber-400 px-2.5 py-1 rounded-xl font-black shadow-xs">القيام 📍</span>}
-                      {isDestination && <span className="text-[10px] bg-slate-950 text-sky-300 px-2.5 py-1 rounded-xl font-black shadow-xs">الوصول 🏁</span>}
-                      {!isOrigin && !isDestination && isWestLine && <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-lg font-bold border border-amber-200">🚧 قريباً</span>}
-                      {!isOrigin && !isDestination && !isWestLine && <span className="text-xs font-black text-slate-400">←</span>}
+                    <div className={`shrink-0 ${isEn ? 'ml-2' : 'mr-2'}`}>
+                      {isOrigin && <span className="text-[10px] bg-slate-950 text-amber-400 px-2.5 py-1 rounded-xl font-black shadow-xs">{isEn ? 'From 📍' : 'القيام 📍'}</span>}
+                      {isDestination && <span className="text-[10px] bg-slate-950 text-sky-300 px-2.5 py-1 rounded-xl font-black shadow-xs">{isEn ? 'To 🏁' : 'الوصول 🏁'}</span>}
+                      {!isOrigin && !isDestination && isWestLine && <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-lg font-bold border border-amber-200">{isEn ? '🚧 Soon' : '🚧 قريباً'}</span>}
+                      {!isOrigin && !isDestination && !isWestLine && <span className="text-xs font-black text-slate-400">{isEn ? '→' : '←'}</span>}
                     </div>
                   </button>
                 );
@@ -553,15 +611,19 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
             M
           </div>
           <div>
-            <div className="font-black text-slate-900 text-sm">منظومة مونوريل القاهرة الكبرى</div>
-            <div className="text-[11px] text-slate-500 font-bold">الهيئة القومية للأشغال والأنفاق</div>
+            <div className="font-black text-slate-900 text-sm">
+              {isEn ? 'Greater Cairo Monorail System' : 'منظومة مونوريل القاهرة الكبرى'}
+            </div>
+            <div className="text-[11px] text-slate-500 font-bold">
+              {isEn ? 'National Authority for Tunnels' : 'الهيئة القومية للأشغال والأنفاق'}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-6 text-slate-700 font-bold overflow-x-auto py-1">
-          <span className="flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-xl">❄️ تكييف كامل</span>
-          <span className="flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-xl">📶 إنترنت مجاني</span>
-          <span className="flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-xl">🖥️ شاشات معلومات</span>
-          <span className="flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-xl">💳 حجز إلكتروني</span>
+          <span className="flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-xl">{isEn ? '❄️ Fully Air Conditioned' : '❄️ تكييف كامل'}</span>
+          <span className="flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-xl">{isEn ? '📶 Free Wi-Fi' : '📶 إنترنت مجاني'}</span>
+          <span className="flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-xl">{isEn ? '🖥️ Info Screens' : '🖥️ شاشات معلومات'}</span>
+          <span className="flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-xl">{isEn ? '💳 E-Ticketing' : '💳 حجز إلكتروني'}</span>
         </div>
       </div>
 
