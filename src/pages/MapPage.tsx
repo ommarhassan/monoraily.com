@@ -18,11 +18,15 @@ const hasLine = (st: any, lineId: string): boolean => {
 export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
   const { lang } = useLanguage();
 
-  // Selected filter line state: 'all' | 'east-nile' | 'west-nile'
+  // Selection states for origin and destination
+  const [originStationId, setOriginStationId] = useState<string | null>('st-1');
+  const [destinationStationId, setDestinationStationId] = useState<string | null>('st-5');
+  const [activeSelectMode, setActiveSelectMode] = useState<'origin' | 'destination'>('origin');
+
+  // Map Filter & Zoom controls
   const [selectedLine, setSelectedLine] = useState<'all' | 'east-nile' | 'west-nile'>('all');
-  const [selectedStationId, setSelectedStationId] = useState<string | null>('st-1');
-  const [hoveredStationId, setHoveredStationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [hoveredStationId, setHoveredStationId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
 
   // Cast colors and metadata safely
@@ -36,10 +40,9 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
   const eastStations = useMemo(() => stations.filter((s) => hasLine(s, 'east-nile')), []);
   const westStations = useMemo(() => stations.filter((s) => hasLine(s, 'west-nile')), []);
 
-  // Selected Station Object
-  const selectedStation = useMemo(() => {
-    return stations.find((s) => s.id === selectedStationId) || null;
-  }, [selectedStationId]);
+  // Origin & Destination Objects
+  const originStation = useMemo(() => stations.find((s) => s.id === originStationId) || null, [originStationId]);
+  const destinationStation = useMemo(() => stations.find((s) => s.id === destinationStationId) || null, [destinationStationId]);
 
   // Filtered station list for sidebar search
   const displayedStations = useMemo(() => {
@@ -100,59 +103,94 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
       .join(' ');
   }, [westStations, stationCoordsMap]);
 
+  // Handle station click to set origin or destination
   const handleSelectStation = (id: string) => {
-    setSelectedStationId(id);
+    if (activeSelectMode === 'origin') {
+      setOriginStationId(id);
+      // Automatically switch to destination selection step if origin is chosen
+      setActiveSelectMode('destination');
+      if (destinationStationId === id) {
+        setDestinationStationId(null);
+      }
+    } else {
+      if (id === originStationId) return; // Cannot select same station
+      setDestinationStationId(id);
+    }
+
     if (onSelectStation) {
       onSelectStation(id);
+    }
+  };
+
+  // Reset route selection
+  const handleResetRoute = () => {
+    setOriginStationId(null);
+    setDestinationStationId(null);
+    setActiveSelectMode('origin');
+  };
+
+  // Handle CTA Booking
+  const handleBookTicket = () => {
+    if (originStationId && destinationStationId && onTicket) {
+      onTicket(originStationId, destinationStationId);
     }
   };
 
   return (
     <div className="subpage w-full min-h-screen bg-slate-50 text-slate-800 p-4 md:p-6 lg:p-8 font-sans dir-rtl">
       
-      {/* Main Header */}
+      {/* Top Header */}
       <div className="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full mb-2 border border-emerald-200">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            حجز تفاعلي من محطة إلى محطة 🎟️
+          </div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-            خريطة مونوريل القاهرة
+            خريطة وحجز مسار المونوريل
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            خطان .. مدينة واحدة | الخريطة التفاعلية الأصلية البسيطة لشبكة المونوريل
+            حدد محطة القيام ومحطة الوصول مباشرة من الخريطة لحجز تذكرتك فوراً
           </p>
         </div>
 
-        {/* Line Tabs Switcher */}
-        <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-slate-200 shadow-xs">
+        {/* Selection Step Controls */}
+        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs">
           <button
-            onClick={() => setSelectedLine('all')}
-            className={`px-4 py-2 text-xs font-bold rounded-xl transition ${
-              selectedLine === 'all'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+            onClick={() => setActiveSelectMode('origin')}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-1.5 ${
+              activeSelectMode === 'origin'
+                ? 'bg-amber-400 text-slate-950 shadow-sm ring-2 ring-amber-400/20'
+                : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
-            جميع الخطوط
+            <span>📍 محطة القيام (من)</span>
+            {originStation && <span className="text-[10px] bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded font-extrabold">✓</span>}
           </button>
+          
+          <span className="text-slate-300">←</span>
+
           <button
-            onClick={() => setSelectedLine('east-nile')}
-            className={`px-4 py-2 text-xs font-bold rounded-xl transition ${
-              selectedLine === 'east-nile'
-                ? 'bg-amber-400 text-slate-950 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+            onClick={() => setActiveSelectMode('destination')}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-1.5 ${
+              activeSelectMode === 'destination'
+                ? 'bg-sky-500 text-white shadow-sm ring-2 ring-sky-500/20'
+                : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
-            الخط الشرقي ({meta?.['east-nile']?.totalStations || 22})
+            <span>🏁 محطة الوصول (إلى)</span>
+            {destinationStation && <span className="text-[10px] bg-sky-600 text-white px-1.5 py-0.5 rounded font-extrabold">✓</span>}
           </button>
-          <button
-            onClick={() => setSelectedLine('west-nile')}
-            className={`px-4 py-2 text-xs font-bold rounded-xl transition ${
-              selectedLine === 'west-nile'
-                ? 'bg-sky-500 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            الخط الغربي ({meta?.['west-nile']?.totalStations || 13})
-          </button>
+
+          {(originStationId || destinationStationId) && (
+            <button
+              onClick={handleResetRoute}
+              className="px-2.5 py-2 text-xs font-semibold text-slate-400 hover:text-slate-700 transition"
+              title="إعادة ضبط المحطات"
+            >
+              ⟲
+            </button>
+          )}
         </div>
       </div>
 
@@ -163,14 +201,18 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
         <div className="lg:col-span-8 flex flex-col gap-4">
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden relative min-h-[560px] flex flex-col justify-between">
             
-            {/* Top Toolbar */}
+            {/* Top Canvas Status Toolbar */}
             <div className="p-4 flex items-center justify-between border-b border-slate-100 bg-white/90 backdrop-blur-sm z-10">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="text-xs font-bold text-slate-700">خريطة تفاعلية أصلية</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full ${activeSelectMode === 'origin' ? 'bg-amber-400' : 'bg-sky-500'} animate-pulse`}></span>
+                  <span className="text-xs font-bold text-slate-700">
+                    {activeSelectMode === 'origin' ? 'انقر على الخريطة لتحديد محطة القيام (من)' : 'انقر على الخريطة لتحديد محطة الوصول (إلى)'}
+                  </span>
+                </div>
               </div>
 
-              {/* Zoom Buttons */}
+              {/* Zoom Controls */}
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
                 <button
                   onClick={() => setZoom((z) => Math.min(1.6, z + 0.15))}
@@ -208,17 +250,22 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                   style={{ minHeight: '480px' }}
                 >
                   <defs>
-                    <linearGradient id="nileGradOriginal" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <linearGradient id="nileGradRoute" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#93c5fd" stopOpacity="0.7" />
                       <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.9" />
                     </linearGradient>
+                    
+                    <filter id="glowRoute" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="3" result="blur" />
+                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
                   </defs>
 
                   {/* River Nile */}
                   <path
                     d="M 460 0 C 470 120, 510 240, 480 360 C 460 440, 490 520, 510 600"
                     fill="none"
-                    stroke="url(#nileGradOriginal)"
+                    stroke="url(#nileGradRoute)"
                     strokeWidth="38"
                     strokeLinecap="round"
                   />
@@ -279,16 +326,34 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                     </g>
                   )}
 
-                  {/* Stations */}
+                  {/* Dynamic Glowing Active Route Segment line when both stations are selected */}
+                  {originStationId && destinationStationId && stationCoordsMap[originStationId] && stationCoordsMap[destinationStationId] && (
+                    <line
+                      x1={stationCoordsMap[originStationId].x}
+                      y1={stationCoordsMap[originStationId].y}
+                      x2={stationCoordsMap[destinationStationId].x}
+                      y2={stationCoordsMap[destinationStationId].y}
+                      stroke="#10b981"
+                      strokeWidth="6"
+                      strokeDasharray="8,6"
+                      className="animate-pulse"
+                    />
+                  )}
+
+                  {/* Render Interactive Station Nodes */}
                   {stations.map((st) => {
                     if (selectedLine !== 'all' && !hasLine(st, selectedLine)) return null;
                     const coords = stationCoordsMap[st.id];
                     if (!coords) return null;
 
-                    const isSelected = selectedStationId === st.id;
+                    const isOrigin = originStationId === st.id;
+                    const isDestination = destinationStationId === st.id;
                     const isHovered = hoveredStationId === st.id;
                     const isEast = hasLine(st, 'east-nile');
-                    const lineColor = isEast ? eastColor : westColor;
+                    
+                    let nodeColor = isEast ? eastColor : westColor;
+                    if (isOrigin) nodeColor = '#f59e0b';
+                    if (isDestination) nodeColor = '#0284c7';
 
                     return (
                       <g
@@ -299,49 +364,54 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                         onMouseLeave={() => setHoveredStationId(null)}
                         className="cursor-pointer group"
                       >
-                        {(isSelected || isHovered) && (
+                        {/* Aura Ring for Selected Origin or Destination */}
+                        {(isOrigin || isDestination || isHovered) && (
                           <circle
-                            r={isSelected ? 18 : 14}
-                            fill={lineColor}
-                            opacity="0.25"
+                            r={isOrigin || isDestination ? 20 : 14}
+                            fill={isOrigin ? '#f59e0b' : isDestination ? '#0284c7' : nodeColor}
+                            opacity="0.3"
                             className="animate-ping"
                           />
                         )}
 
+                        {/* Node Outer Circle */}
                         <circle
-                          r={isSelected ? 11 : 8}
+                          r={isOrigin || isDestination ? 12 : 8}
                           fill="#ffffff"
-                          stroke={lineColor}
-                          strokeWidth={isSelected ? 4 : 3}
+                          stroke={nodeColor}
+                          strokeWidth={isOrigin || isDestination ? 4 : 3}
                           className="transition-all duration-200 group-hover:scale-125"
                         />
 
+                        {/* Node Inner Core Dot */}
                         <circle
-                          r={isSelected ? 5 : 4}
-                          fill={lineColor}
+                          r={isOrigin || isDestination ? 6 : 4}
+                          fill={nodeColor}
                         />
 
-                        {(isSelected || isHovered) && (
-                          <g transform="translate(0, -18)" className="pointer-events-none">
+                        {/* Label Badge */}
+                        {(isOrigin || isDestination || isHovered) && (
+                          <g transform="translate(0, -22)" className="pointer-events-none">
                             <rect
-                              x="-50"
+                              x="-55"
                               y="-16"
-                              width="100"
-                              height="22"
-                              rx="11"
-                              fill={isSelected ? '#0f172a' : '#ffffff'}
-                              stroke={lineColor}
+                              width="110"
+                              height="24"
+                              rx="12"
+                              fill={isOrigin ? '#f59e0b' : isDestination ? '#0284c7' : '#0f172a'}
+                              stroke="#ffffff"
                               strokeWidth="1.5"
+                              filter="url(#glowRoute)"
                             />
                             <text
                               x="0"
-                              y="-2"
+                              y="0"
                               textAnchor="middle"
-                              fill={isSelected ? '#ffffff' : '#1e293b'}
+                              fill="#ffffff"
                               fontSize="10"
                               fontWeight="bold"
                             >
-                              {getStationName(st.name, lang)}
+                              {isOrigin ? `📍 من: ${getStationName(st.name, lang)}` : isDestination ? `🏁 إلى: ${getStationName(st.name, lang)}` : getStationName(st.name, lang)}
                             </text>
                           </g>
                         )}
@@ -354,54 +424,105 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
               {/* Map Floating Legend */}
               <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-slate-200 shadow-md flex items-center gap-4 text-xs font-semibold text-slate-700">
                 <div className="flex items-center gap-2">
-                  <span className="w-4 h-2 rounded-full bg-amber-400"></span>
-                  <span>الخط الشرقي</span>
+                  <span className="w-3 h-3 rounded-full bg-amber-400"></span>
+                  <span>محطة القيام (من)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-4 h-2 rounded-full bg-sky-500"></span>
-                  <span>الخط الغربي</span>
+                  <span className="w-3 h-3 rounded-full bg-sky-500"></span>
+                  <span>محطة الوصول (إلى)</span>
                 </div>
               </div>
             </div>
 
-            {/* Selected Station Quick Summary Panel */}
-            {selectedStation && (
-              <div className="p-4 bg-slate-900 text-white flex items-center justify-between border-t border-slate-800">
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-slate-900 shrink-0"
-                    style={{ backgroundColor: hasLine(selectedStation, 'east-nile') ? eastColor : westColor }}
-                  >
-                    🚉
-                  </div>
+            {/* Selected Station Route Summary & Booking Bar */}
+            <div className="p-4 bg-slate-900 text-white flex flex-col md:flex-row items-center justify-between gap-4 border-t border-slate-800">
+              <div className="flex items-center gap-4 w-full md:w-auto">
+                
+                {/* Origin Badge */}
+                <div className="flex items-center gap-2.5 bg-slate-800 p-2.5 rounded-xl border border-slate-700 flex-1 md:flex-initial">
+                  <span className="text-base">📍</span>
                   <div>
-                    <h4 className="font-extrabold text-base text-white">
-                      {getStationName(selectedStation.name, lang)}
-                    </h4>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      المنطقة: {getStationName(selectedStation.area, lang)} | {hasLine(selectedStation, 'east-nile') ? 'الخط الشرقي (شرق النيل)' : 'الخط الغربي (غرب النيل)'}
-                    </p>
+                    <div className="text-[10px] text-amber-400 font-bold uppercase">القيام (من)</div>
+                    <div className="text-xs font-bold text-white">
+                      {originStation ? getStationName(originStation.name, lang) : 'لم تحدد بعد'}
+                    </div>
                   </div>
                 </div>
 
-                {onTicket && (
-                  <button
-                    onClick={() => onTicket(selectedStation.id, selectedStation.id)}
-                    className="text-xs text-amber-400 font-bold bg-slate-800 hover:bg-slate-700 px-3.5 py-2 rounded-xl border border-slate-700 transition"
-                  >
-                    حجز تذكرة من هذه المحطة
-                  </button>
-                )}
+                <span className="text-slate-400 font-bold text-sm hidden md:inline">←</span>
+
+                {/* Destination Badge */}
+                <div className="flex items-center gap-2.5 bg-slate-800 p-2.5 rounded-xl border border-slate-700 flex-1 md:flex-initial">
+                  <span className="text-base">🏁</span>
+                  <div>
+                    <div className="text-[10px] text-sky-400 font-bold uppercase">الوصول (إلى)</div>
+                    <div className="text-xs font-bold text-white">
+                      {destinationStation ? getStationName(destinationStation.name, lang) : 'انقر على الخريطة لتحديدها'}
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
+
+              {/* Action Ticket Booking CTA */}
+              <button
+                onClick={handleBookTicket}
+                disabled={!originStationId || !destinationStationId}
+                className={`w-full md:w-auto px-6 py-3 text-xs font-extrabold rounded-xl transition shadow-md flex items-center justify-center gap-2 ${
+                  originStationId && destinationStationId
+                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 cursor-pointer'
+                    : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                }`}
+              >
+                <span>🎟️</span>
+                <span>
+                  {originStation && destinationStation
+                    ? `حجز تذكرة من (${getStationName(originStation.name, lang)}) إلى (${getStationName(destinationStation.name, lang)})`
+                    : 'حدد المحطتين لحجز التذكرة'}
+                </span>
+              </button>
+            </div>
 
           </div>
         </div>
 
-        {/* Right Sidebar: Sequential Station List */}
+        {/* Right Sidebar: Interactive Station Selector */}
         <div className="lg:col-span-4 flex flex-col gap-4">
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 flex flex-col min-h-[560px]">
             
+            {/* Filter Line Switcher */}
+            <div className="flex bg-slate-100 p-1 rounded-2xl mb-4 border border-slate-200">
+              <button
+                onClick={() => setSelectedLine('all')}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+                  selectedLine === 'all'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                الكل
+              </button>
+              <button
+                onClick={() => setSelectedLine('east-nile')}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+                  selectedLine === 'east-nile'
+                    ? 'bg-amber-400 text-slate-950 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                الشرقي
+              </button>
+              <button
+                onClick={() => setSelectedLine('west-nile')}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+                  selectedLine === 'west-nile'
+                    ? 'bg-sky-500 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                الغربي
+              </button>
+            </div>
+
             {/* Search Field */}
             <div className="relative mb-4">
               <input
@@ -414,21 +535,24 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
               <span className="absolute right-3 top-2.5 text-slate-400 text-sm">🔍</span>
             </div>
 
-            {/* List Header */}
+            {/* List Header & Mode Guidance */}
             <div className="flex items-center justify-between mb-3 text-xs font-bold text-slate-500 px-1">
-              <span>محطات الشبكة ({displayedStations.length})</span>
-              <span className="text-[11px] font-normal text-slate-400">انقر للتحديد</span>
+              <span>قائمة المحطات ({displayedStations.length})</span>
+              <span className="text-[11px] font-semibold text-amber-600">
+                {activeSelectMode === 'origin' ? 'اختر القيام 📍' : 'اختر الوصول 🏁'}
+              </span>
             </div>
 
             {/* Station List */}
-            <div className="flex-1 overflow-y-auto max-h-[420px] space-y-2 pr-1 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto max-h-[400px] space-y-2 pr-1 custom-scrollbar">
               {displayedStations.length === 0 ? (
                 <div className="text-center py-10 text-slate-400 text-xs">
                   لا توجد محطات مطابقة
                 </div>
               ) : (
                 displayedStations.map((st, idx) => {
-                  const isSelected = selectedStationId === st.id;
+                  const isOrigin = originStationId === st.id;
+                  const isDestination = destinationStationId === st.id;
                   const isEast = hasLine(st, 'east-nile');
                   const badgeBg = isEast ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800';
 
@@ -437,32 +561,36 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                       key={st.id}
                       onClick={() => handleSelectStation(st.id)}
                       className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                        isSelected
-                          ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-amber-400/30'
+                        isOrigin
+                          ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-md font-extrabold'
+                          : isDestination
+                          ? 'bg-sky-500 text-white border-sky-600 shadow-md font-extrabold'
                           : 'bg-white hover:bg-slate-50 border-slate-100 text-slate-800 hover:border-slate-200'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <span 
                           className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0 ${
-                            isSelected ? 'bg-amber-400 text-slate-950' : badgeBg
+                            isOrigin || isDestination ? 'bg-slate-900 text-white' : badgeBg
                           }`}
                         >
                           {idx + 1}
                         </span>
                         <div>
-                          <div className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                          <div className="text-xs font-bold">
                             {getStationName(st.name, lang)}
                           </div>
-                          <div className={`text-[11px] ${isSelected ? 'text-slate-400' : 'text-slate-500'}`}>
+                          <div className={`text-[11px] ${isOrigin || isDestination ? 'opacity-80' : 'text-slate-500'}`}>
                             {getStationName(st.area, lang)}
                           </div>
                         </div>
                       </div>
 
-                      <span className={`text-xs ${isSelected ? 'text-amber-400' : 'text-slate-400'}`}>
-                        ←
-                      </span>
+                      <div>
+                        {isOrigin && <span className="text-xs bg-slate-900 text-amber-400 px-2 py-0.5 rounded-full font-bold">القيام 📍</span>}
+                        {isDestination && <span className="text-xs bg-slate-900 text-sky-300 px-2 py-0.5 rounded-full font-bold">الوصول 🏁</span>}
+                        {!isOrigin && !isDestination && <span className="text-xs text-slate-400">←</span>}
+                      </div>
                     </div>
                   );
                 })
