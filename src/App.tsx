@@ -22,6 +22,9 @@ const CLOCK_TICK_MS = 30_000;
 const validPages: Page[] = ['home', 'map', 'stations', 'fares', 'mytickets', 'gate', 'dashboard', 'verification', 'admin', 'auth'];
 const translatedPages: Page[] = ['home', 'map', 'stations', 'fares', 'mytickets', 'gate', 'dashboard', 'verification', 'admin', 'auth'];
 
+/** Private / data pages: the news ticker is not shown on them. */
+const pagesWithoutTicker: Page[] = ['dashboard', 'verification', 'admin'];
+
 function getInitialPage(): Page {
   try {
     const hash = window.location.hash.replace('#', '').trim() as Page;
@@ -36,7 +39,8 @@ function getInitialPage(): Page {
 
 function Shell() {
   const { user, loading, recovery, isAdmin, signOut } = useAuth();
-  const { dir } = useLanguage();
+  const { dir, lang } = useLanguage();
+  const isAr = lang === 'ar';
   const planner = usePlanner();
 
   const [page, setPage] = useState<Page>(getInitialPage);
@@ -109,7 +113,7 @@ function Shell() {
     if (loading) {
       return (
         <div className="subpage">
-          <p className="auth-sub">بنحمّل…</p>
+          <p className="auth-sub">{isAr ? 'بنحمّل…' : 'Loading…'}</p>
         </div>
       );
     }
@@ -118,7 +122,11 @@ function Shell() {
     const needsLogin = page === 'auth' || (protectedPages.includes(page) && !user);
     if (needsLogin) {
       const notice =
-        afterLogin !== 'home' && afterLogin !== 'dashboard' ? 'سجّل دخولك الأول عشان تفتح الصفحة دي.' : undefined;
+        afterLogin !== 'home' && afterLogin !== 'dashboard'
+          ? isAr
+            ? 'سجّل دخولك الأول عشان تفتح الصفحة دي.'
+            : 'Sign in first to open this page.'
+          : undefined;
       return <AuthScreen mode={authMode} setMode={setAuthMode} notice={notice} />;
     }
 
@@ -152,8 +160,8 @@ function Shell() {
         ) : (
           <div className="subpage">
             <div className="result-card empty-result">
-              <h3>مش مسموح لك تدخل هنا.</h3>
-              <p>الصفحة دي للأدمن بس.</p>
+              <h3>{isAr ? 'مش مسموح لك تدخل هنا.' : 'You are not allowed in here.'}</h3>
+              <p>{isAr ? 'الصفحة دي للأدمن بس.' : 'This page is for admins only.'}</p>
             </div>
           </div>
         );
@@ -175,7 +183,7 @@ function Shell() {
           go('home');
         }}
       />
-      <NewsTicker />
+      {!pagesWithoutTicker.includes(page) && <NewsTicker />}
       <main className="main-content" dir={translatedPages.includes(page) ? dir : 'rtl'}>
         {renderPage()}
       </main>
@@ -197,7 +205,9 @@ function Shell() {
 export default function App() {
   const token = new URLSearchParams(window.location.search).get('verify');
   return token ? (
-    <VerifyScreen token={token} />
+    <LanguageProvider>
+      <VerifyScreen token={token} />
+    </LanguageProvider>
   ) : (
     <LanguageProvider>
       <AuthProvider>
