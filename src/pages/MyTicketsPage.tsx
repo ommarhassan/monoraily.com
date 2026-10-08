@@ -8,6 +8,8 @@ import { formatDate, formatTime, num } from '../lib/format';
 import { configured } from '../lib/supabase';
 import { qrImage, subFromRow, ticketFromRow, ticketStatus, tripsLeft } from '../lib/ticketing';
 
+type Status = 'valid' | 'used' | 'expired';
+
 type SavedSubscription = {
   id: string;
   userId: string;
@@ -26,7 +28,7 @@ type SavedTicket = {
   route: string;
   fare: number;
   kind: 'full' | 'half';
-  status: 'valid' | 'used' | 'expired';
+  status: Status | string;
   expiresAt: string;
   payload: string;
 };
@@ -54,6 +56,16 @@ const zoneNames: Record<number, { ar: string; en: string }> = {
   2: { ar: 'ثلاث مناطق', en: 'Three zones' },
   3: { ar: 'أربع مناطق', en: 'Four zones' },
 };
+
+const subState = (s: SavedSubscription): Status =>
+  s.tripsLeft <= 0 ? 'used' : new Date(s.expiresAt).getTime() < Date.now() ? 'expired' : 'valid';
+
+const ticketState = (tk: SavedTicket): Status =>
+  tk.status === 'used' ? 'used' : tk.status === 'valid' ? 'valid' : 'expired';
+
+/** Usable ones first, finished ones after. */
+const usableFirst = <T,>(items: T[], state: (item: T) => Status) =>
+  [...items].sort((a, b) => Number(state(b) === 'valid') - Number(state(a) === 'valid'));
 
 export default function MyTicketsPage({ onPlan, justPaid }: Props) {
   const { user } = useAuth();
@@ -159,12 +171,24 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
     return `${getStationName(from, lang)} ← ${getStationName(to, lang)}`;
   };
 
-  const ticketStatusTag = (status: SavedTicket['status']) =>
+  const ticketTag = (status: Status) =>
     status === 'valid'
       ? isAr ? 'صالحة' : 'Valid'
       : status === 'used'
         ? isAr ? 'مستخدمة' : 'Used'
         : isAr ? 'منتهية' : 'Expired';
+
+  const subTag = (status: Status) =>
+    status === 'valid'
+      ? isAr ? 'نشط' : 'Active'
+      : status === 'used'
+        ? isAr ? 'الرحلات خلصت' : 'No trips left'
+        : isAr ? 'منتهي' : 'Expired';
+
+  const expiresText = (iso: string, verbAr: string) =>
+    isAr
+      ? `${verbAr} ${formatDate(iso, locale)} الساعة ${formatTime(iso, locale)}`
+      : `expires ${formatDate(iso, locale)} at ${formatTime(iso, locale)}`;
 
   return (
     <div className="subpage">
@@ -175,7 +199,7 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
       </div>
 
       {justPaid && !loading && (
-        <div className="paid-banner">
+        <div className="result-card" role="status">
           <span className="eyebrow green">{t('tickets.paidEyebrow')}</span>
           {justPaidTicket && (
             <>
@@ -207,96 +231,67 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
       {loading && <p className="auth-sub">{isAr ? 'بنحمّل…' : 'Loading…'}</p>}
 
       {subs.length > 0 && (
-        <div className="wallet-section">
-          <div className="section-title-row">
-            <div>
-              <span className="eyebrow green">{isAr ? 'الاشتراكات' : 'Subscriptions'}</span>
-              <h2>{t('tickets.subsHeading')}</h2>
-            </div>
-          </div>
+        <>
+          <h2 className="wallet-section-title">{t('tickets.subsHeading')}</h2>
           <div className="wallet-grid">
-            {subs.map((s) => {
-              const active = new Date(s.expiresAt) > new Date() && s.tripsLeft > 0;
+            {usableFirst(subs, subState).map((s) => {
+              const status = subState(s);
               const pName = planNames[s.plan]?.[lang] || s.plan;
               const zName = zoneNames[s.zone]?.[lang] || s.zone;
               const title = isAr ? `اشتراك ${pName} · ${zName}` : `${pName} subscription · ${zName}`;
-              const statusTag = active ? (isAr ? 'نشط' : 'Active') : (isAr ? 'منتهي' : 'Expired');
+              const pct = s.tripsTotal > 0 ? Math.max(0, Math.min(100, (s.tripsLeft / s.tripsTotal) * 100)) : 0;
               return (
-                <div className="ticket-card" key={s.id}>
-                  <div className="ticket-head">
-                    <span className={`status-pill ${active ? 'active' : 'expired'}`}>{statusTag}</span>
-                    <span className="ticket-id">{s.id}</span>
-                  </div>
-                  {qrs[s.id] && (
-                    <div className="ticket-qr-wrap" style={{ textAlign: 'center', padding: '12px' }}>
-                      <img
-                        src={qrs[s.id]}
-                        alt={s.id}
-                        width={160}
-                        height={160}
-                        style={{ borderRadius: '8px' }}
-                      />
-                    </div>
-                  )}
-                  <div className="ticket-body">
+                <article className={`wallet-card ${status}`} key={s.id}>
+                  {qrs[s.id] && <img className="qr-img small" src={qrs[s.id]} alt={s.id} />}
+                  <div>
+                    <span className={`status-pill ${status}`}>{subTag(status)}</span>
                     <h3>{title}</h3>
                     <p>
-                      {s.holderName} · {isAr ? `باقي ${num(s.tripsLeft, locale)} من ${num(s.tripsTotal, locale)} رحلة` : `${num(s.tripsLeft, locale)} of ${num(s.tripsTotal, locale)} trips left`}
+                      {s.holderName} ·{' '}
+                      {isAr
+                        ? `باقي ${num(s.tripsLeft, locale)} من ${num(s.tripsTotal, locale)} رحلة`
+                        : `${num(s.tripsLeft, locale)} of ${num(s.tripsTotal, locale)} trips left`}
                     </p>
+                    <div className="trip-meter" aria-hidden="true">
+                      <span style={{ width: `${pct}%` }} />
+                    </div>
                     <small>
-                      {isAr ? `ينتهي ${formatDate(s.expiresAt, locale)} الساعة ${formatTime(s.expiresAt, locale)}` : `expires ${formatDate(s.expiresAt, locale)} at ${formatTime(s.expiresAt, locale)}`}
+                      {s.id} · {expiresText(s.expiresAt, 'ينتهي')}
                     </small>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
-        </div>
+        </>
       )}
 
       {tickets.length > 0 && (
-        <div className="wallet-section">
-          <div className="section-title-row">
-            <div>
-              <span className="eyebrow green">{isAr ? 'التذاكر' : 'Tickets'}</span>
-              <h2>{t('tickets.ticketsHeading')}</h2>
-            </div>
-          </div>
+        <>
+          <h2 className="wallet-section-title">{t('tickets.ticketsHeading')}</h2>
           <div className="wallet-grid">
-            {tickets.map((tItem) => {
-              const active = tItem.status === 'valid';
-              const kindLabel = tItem.kind === 'half' ? (isAr ? 'نصف تذكرة' : 'Half ticket') : (isAr ? 'تذكرة كاملة' : 'Full ticket');
+            {usableFirst(tickets, ticketState).map((tk) => {
+              const status = ticketState(tk);
+              const kindLabel =
+                tk.kind === 'half' ? (isAr ? 'نصف تذكرة' : 'Half ticket') : (isAr ? 'تذكرة كاملة' : 'Full ticket');
               return (
-                <div className="ticket-card" key={tItem.id}>
-                  <div className="ticket-head">
-                    <span className={`status-pill ${active ? 'active' : 'expired'}`}>{ticketStatusTag(tItem.status)}</span>
-                    <span className="ticket-id">{tItem.id}</span>
-                  </div>
-                  {qrs[tItem.id] && (
-                    <div className="ticket-qr-wrap" style={{ textAlign: 'center', padding: '12px' }}>
-                      <img
-                        src={qrs[tItem.id]}
-                        alt={tItem.id}
-                        width={160}
-                        height={160}
-                        style={{ borderRadius: '8px' }}
-                      />
-                    </div>
-                  )}
-                  <div className="ticket-body">
-                    <h3>{translateRoute(tItem.route)}</h3>
+                <article className={`wallet-card ${status}`} key={tk.id}>
+                  {qrs[tk.id] && <img className="qr-img small" src={qrs[tk.id]} alt={tk.id} />}
+                  <div>
+                    <span className={`status-pill ${status}`}>{ticketTag(status)}</span>
+                    <h3>{translateRoute(tk.route)}</h3>
                     <p>
-                      {kindLabel} · {num(tItem.fare, locale)} {t('common.egp')}
+                      {kindLabel} · {num(tk.fare, locale)} {t('common.egp')}
                     </p>
                     <small>
-                      {isAr ? `تنتهي ${formatDate(tItem.expiresAt, locale)} الساعة ${formatTime(tItem.expiresAt, locale)}` : `expires ${formatDate(tItem.expiresAt, locale)} at ${formatTime(tItem.expiresAt, locale)}`}
+                      {tk.id} · {expiresText(tk.expiresAt, 'تنتهي')}
                     </small>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
-        </div>
+        </>
       )}
 
       {!loading && subs.length === 0 && tickets.length === 0 && !justPaid && (
