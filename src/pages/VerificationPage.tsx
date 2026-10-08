@@ -4,23 +4,16 @@ import { useLanguage } from '../i18n/LanguageContext';
 import {
   categoryLabels,
   myVerification,
+  statusLabels,
   submitVerification,
   type MyVerification,
   type VerificationCategory,
 } from '../lib/verification';
 
-/** English names for the categories. Any category not listed here falls back to the Arabic label. */
-const categoryNamesEn: Partial<Record<VerificationCategory, string>> = {
-  senior: 'Senior (over 60)',
-  disability: 'Person with a disability',
-} as Partial<Record<VerificationCategory, string>>;
-
 export default function VerificationPage() {
-  const { user } = useAuth();
   const { lang } = useLanguage();
   const isAr = lang === 'ar';
-  const L = (ar: string, en: string) => (isAr ? ar : en);
-
+  const { user } = useAuth();
   const [info, setInfo] = useState<MyVerification | null>(null);
   const [category, setCategory] = useState<VerificationCategory>('senior');
   const [file, setFile] = useState<File | null>(null);
@@ -33,12 +26,12 @@ export default function VerificationPage() {
     void load();
   }, [user?.id]);
 
-  const categoryName = (key: VerificationCategory) =>
-    isAr ? categoryLabels[key] : categoryNamesEn[key] ?? categoryLabels[key];
+  const getCatLabel = (key: VerificationCategory) =>
+    isAr ? categoryLabels[key] : key === 'senior' ? 'Seniors (over 60)' : 'People with disabilities';
 
   const submit = async () => {
     if (!file) {
-      setMessage({ ok: false, text: L('اختار صورة الهوية الأول.', 'Choose your ID image first.') });
+      setMessage({ ok: false, text: isAr ? 'اختار صورة الهوية الأول.' : 'Select an ID document first.' });
       return;
     }
     setBusy(true);
@@ -47,10 +40,23 @@ export default function VerificationPage() {
     setBusy(false);
     if (result.ok) {
       setFile(null);
-      setMessage({ ok: true, text: L('اتبعت طلبك، وهيتراجع قريب.', 'Your request was sent and will be reviewed soon.') });
+      setMessage({ ok: true, text: isAr ? 'اتبعت طلبك، وهيتراجع قريب.' : 'Your request was sent and will be reviewed soon.' });
       await load();
     } else {
-      setMessage({ ok: false, text: result.error ?? L('حصلت مشكلة، جرّب تاني.', 'Something went wrong, please try again.') });
+      const err = result.error
+        ? isAr
+          ? result.error
+          : result.error === 'سجّل دخول الأول'
+          ? 'Please sign in first'
+          : result.error === 'الملف لازم يكون صورة (JPG أو PNG أو WEBP) أو PDF'
+          ? 'File must be an image (JPG, PNG, WEBP) or PDF'
+          : result.error === 'الملف أكبر من 5 ميجا'
+          ? 'File size exceeds 5 MB'
+          : result.error === 'عندك طلب قيد المراجعة بالفعل'
+          ? 'You already have a request under review'
+          : 'An error occurred, please try again.'
+        : isAr ? 'حصلت مشكلة، جرّب تاني.' : 'An error occurred, please try again.';
+      setMessage({ ok: false, text: err });
     }
   };
 
@@ -61,61 +67,53 @@ export default function VerificationPage() {
   return (
     <div className="subpage">
       <div className="page-heading">
-        <span className="eyebrow green">{L('الحساب', 'Account')}</span>
-        <h1>{L('توثيق الفئة', 'Category verification')}</h1>
+        <span className="eyebrow green">{isAr ? 'الحساب' : 'Account'}</span>
+        <h1>{isAr ? 'توثيق الفئة' : 'Category Verification'}</h1>
         <p>
-          {L(
-            'نصف التذكرة متاح لكبار السن (فوق ٦٠ سنة) وذوي الإعاقة، بعد مراجعة المستند.',
-            'Half fare is available for seniors (over 60) and riders with disabilities, after your document is reviewed.',
-          )}
+          {isAr
+            ? 'نصف التذكرة متاح لكبار السن (فوق ٦٠ سنة) وذوي الإعاقة، بعد مراجعة المستند.'
+            : 'Half-fare tickets are available to seniors (over 60) and people with disabilities, after document verification.'}
         </p>
       </div>
 
       {!info ? (
-        <p className="auth-sub">{L('بنحمّل…', 'Loading…')}</p>
+        <p className="auth-sub">{isAr ? 'بنحمّل…' : 'Loading…'}</p>
       ) : info.category ? (
         <div className="network-card">
-          <h3>{L('حسابك موثّق ✓', 'Your account is verified ✓')}</h3>
-          <p>
-            {L('الفئة', 'Category')}: {categoryName(info.category)}
-          </p>
-          <p>
-            {L('التوثيق ساري لحد', 'Verification is valid until')} {info.until}.
-          </p>
+          <h3>{isAr ? 'حسابك موثّق ✓' : 'Your Account is Verified ✓'}</h3>
+          <p>{isAr ? `الفئة: ${getCatLabel(info.category)}` : `Category: ${getCatLabel(info.category)}`}</p>
+          <p>{isAr ? `التوثيق ساري لحد ${info.until}.` : `Verification valid until ${info.until}.`}</p>
         </div>
       ) : pending ? (
         <div className="network-card">
-          <h3>{L('قيد المراجعة', 'Under review')}</h3>
+          <h3>{isAr ? statusLabels.pending : 'Under Review'}</h3>
           <p>
-            {L(
-              'طلبك وصل وبيتراجع. هتقدر تحجز نصف تذكرة أول ما تتم الموافقة.',
-              'Your request was received and is being reviewed. You can book a half ticket as soon as it is approved.',
-            )}
+            {isAr
+              ? 'طلبك وصل وبيتراجع. هتقدر تحجز نصف تذكرة أول ما تتم الموافقة.'
+              : 'Your request was received and is under review. You can book half-fare tickets once approved.'}
           </p>
         </div>
       ) : (
         <div className="network-card">
           {expired && (
             <p>
-              {L(
-                'التوثيق القديم انتهى. ابعت مستند جديد عشان تجدّده.',
-                'Your previous verification has expired. Send a new document to renew it.',
-              )}
+              {isAr
+                ? 'التوثيق القديم انتهى. ابعت مستند جديد عشان تجدّده.'
+                : 'Your previous verification expired. Upload a new document to renew it.'}
             </p>
           )}
           {rejected && (
             <p>
-              {L(
-                'طلبك السابق اترفض. تقدر تبعت مستند أوضح.',
-                'Your previous request was rejected. You can send a clearer document.',
-              )}
+              {isAr
+                ? 'طلبك السابق اترفض. تقدر تبعت مستند أوضح.'
+                : 'Your previous request was rejected. You can submit a clearer document.'}
             </p>
           )}
 
-          <h3>{L('ابعت طلب توثيق', 'Submit a verification request')}</h3>
+          <h3>{isAr ? 'ابعت طلب توثيق' : 'Submit Verification Request'}</h3>
 
           <label className="auth-sub" htmlFor="verify-category">
-            {L('الفئة', 'Category')}
+            {isAr ? 'الفئة' : 'Category'}
           </label>
           <select
             id="verify-category"
@@ -124,16 +122,15 @@ export default function VerificationPage() {
           >
             {(Object.keys(categoryLabels) as VerificationCategory[]).map((key) => (
               <option key={key} value={key}>
-                {categoryName(key)}
+                {getCatLabel(key)}
               </option>
             ))}
           </select>
 
           <label className="auth-sub" htmlFor="verify-file">
-            {L(
-              'صورة الهوية أو الكارنيه (JPG أو PNG أو WEBP أو PDF، لحد 5 ميجا)',
-              'ID or card image (JPG, PNG, WEBP or PDF, up to 5 MB)',
-            )}
+            {isAr
+              ? 'صورة الهوية أو الكارنيه (JPG أو PNG أو WEBP أو PDF، لحد 5 ميجا)'
+              : 'ID image or card photo (JPG, PNG, WEBP, or PDF up to 5 MB)'}
           </label>
           <input
             id="verify-file"
@@ -143,14 +140,13 @@ export default function VerificationPage() {
           />
 
           <p className="auth-sub">
-            {L(
-              'المستند بيتخزن في مكان خاص، والمراجع (الأدمن) بس هو اللي يقدر يشوفه، ومابنستخدمه لأي حاجة غير التوثيق.',
-              'Your document is stored privately. Only the reviewer (admin) can see it, and we use it for nothing except verification.',
-            )}
+            {isAr
+              ? 'المستند بيتخزن في مكان خاص، والمراجع (الأدمن) بس هو اللي يقدر يشوفه، ومابنستخدمه لأي حاجة غير التوثيق.'
+              : 'Documents are stored securely and privately for reviewer (admin) access only, solely for verification purposes.'}
           </p>
 
           <button className="dark-button" disabled={busy || !file} onClick={submit}>
-            {busy ? L('بنرفع…', 'Uploading…') : L('ابعت الطلب', 'Send request')}
+            {busy ? (isAr ? 'بنرفع…' : 'Uploading…') : isAr ? 'ابعت الطلب' : 'Submit Request'}
           </button>
         </div>
       )}
