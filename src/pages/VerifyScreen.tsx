@@ -25,14 +25,13 @@ export default function VerifyScreen({ token }: { token: string }) {
         </div>
         <h2>{!verdict ? 'جاري التحقق…' : verdict.ok ? 'تم التحقق ✓ اتفضل' : `مرفوض: ${verdict.message}`}</h2>
         <p>
-          {verdict?.ok ? `${verdict.name} · ${verdict.from} ← ${verdict.to}` : verdict ? 'البوابة فضلت مقفولة.' : ''}
+          {!verdict
+            ? ''
+            : !verdict.ok
+              ? 'البوابة فضلت مقفولة.'
+              : verdict.type === 'ticket'
+                ? `${verdict.name} · ${verdict.from} ← ${verdict.to}`
+                : `${verdict.name} · باقي ${verdict.tripsLeft} من ${verdict.tripsTotal} رحلة`}
         </p>
         <div className="gate-actions">
-          <a className="outline-button" href={window.location.pathname}>
-            الرجوع لـ {brand.name}
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
+          <a className="outline-button"
