@@ -1,137 +1,239 @@
-import { useState } from 'react';
-import { stations, lineMeta } from '../data/network';
+import type { CSSProperties } from 'react';
+import Icon from '../components/Icon';
 import { getStationName } from '../components/StationPicker';
+import { operatingHours } from '../data/fares';
+import { lineColors, lineMeta, linePaths, plannedLines, stationById } from '../data/network';
+import { westNile, type PlannedStation } from '../data/westNile';
 import { useLanguage } from '../i18n/LanguageContext';
+import { num } from '../lib/format';
+
+const OFFICIAL_URL = 'https://www.nat.gov.eg';
+const WEST_COLOR = '#7b8794';
+const westStations: PlannedStation[] = westNile.stations;
+
+const areaTranslations: Record<string, string> = {
+  'مدينة نصر': 'Nasr City',
+  'القاهرة الجديدة': 'New Cairo',
+  'العاصمة الإدارية': 'New Administrative Capital',
+  'التجمع الخامس': '5th Settlement',
+  '6 أكتوبر': '6th of October',
+  'الشيخ زايد': 'Sheikh Zayed',
+};
+
+const labelTranslations: Record<string, string> = {
+  'مترو الخط الرابع (مستقبلاً)': 'Metro Line 4 (Future)',
+  'مترو الخط الرابع': 'Metro Line 4',
+  'مترو الخط السادس (مستقبلاً)': 'Metro Line 6 (Future)',
+  'مترو الخط السادس': 'Metro Line 6',
+  'القطار الكهربائي السريع (مستقبلاً)': 'High-Speed Rail (Future)',
+  'القطار الكهربائي السريع': 'High-Speed Rail',
+  'مترو الخط الثالث': 'Metro Line 3',
+  'محطة قطارات الصعيد': 'Upper Egypt Railway Station',
+  'الخط الغربي': 'West Nile Line',
+  'من 6 أكتوبر إلى وادي النيل': 'From 6th of October to Wadi El Nile',
+};
+
+function getAreaName(area: string, lang: string): string {
+  if (lang === 'en' && areaTranslations[area]) return areaTranslations[area];
+  return area;
+}
+
+function formatLabel(label: any, lang: string): string {
+  if (!label) return '';
+  if (typeof label === 'object' && label !== null) {
+    return lang === 'en' ? (label.en || label.ar || '') : (label.ar || label.en || '');
+  }
+  const str = String(label);
+  if (lang === 'en' && labelTranslations[str]) return labelTranslations[str];
+  return getStationName(str, lang);
+}
+
+/** Splits a line's stations into runs that share the same area (Nasr City, New Cairo, New Capital...). */
+function groupByArea(names: string[]) {
+  const groups: { area: string; names: string[] }[] = [];
+  for (const name of names) {
+    const st = stationById.get(name);
+    const area = st ? st.area : '';
+    const last = groups[groups.length - 1];
+    if (last && last.area === area) last.names.push(name);
+    else groups.push({ area, names: [name] });
+  }
+  return groups;
+}
 
 export default function StationsPage() {
-  const { lang } = useLanguage();
-  const [activeLine, setActiveLine] = useState<'east-nile' | 'west-nile'>('east-nile');
+  const { lang, locale } = useLanguage();
+  const line = lineMeta['east-nile'];
+  const path = linePaths.find((p) => p.line === 'east-nile')!;
+  const groups = groupByArea(path.names);
+  let counter = 0;
 
-  const lineStations = stations.filter((s: any) => {
-    if (Array.isArray(s.lines)) return s.lines.includes(activeLine);
-    return s.line === activeLine;
-  });
+  const isAr = lang === 'ar';
 
-  const meta = (lineMeta as any)?.[activeLine];
+  const lineName = isAr ? line.name : 'East Nile Line';
+  const westName = isAr ? westNile.name : 'West Nile Line';
+  const westStatus = isAr ? westNile.status : 'Trial Operation / Under Construction';
+  const westNoteText = isAr ? westNile.note : 'Trial operation starting soon.';
+
+  const westPhases = [
+    {
+      phase: 1,
+      title: isAr
+        ? 'المرحلة الأولى (تشغيل تجريبي مقرر في أكتوبر 2026)'
+        : 'Phase 1 (Trial operation planned for Oct 2026)',
+    },
+    {
+      phase: 2,
+      title: isAr
+        ? 'المرحلة الثانية (مقررة في الربع الأول من 2027)'
+        : 'Phase 2 (Planned for Q1 2027)',
+    },
+  ] as const;
 
   return (
-    <div className="subpage w-full min-h-screen bg-slate-50 text-slate-800 p-4 md:p-6 lg:p-8 font-sans">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left Column: Stations Timeline */}
-        <div className="lg:col-span-9 bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs">
-          
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-6 mb-8 gap-4">
-            <div>
-              <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">
-                Stations Guide
-              </span>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mt-1">
-                {activeLine === 'east-nile' ? 'East Nile Line' : 'West Nile Line'}
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">
-                {lineStations.length} stations
-              </span>
-
-              <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
-                <button
-                  onClick={() => setActiveLine('east-nile')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                    activeLine === 'east-nile'
-                      ? 'bg-amber-400 text-slate-950 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  East Nile
-                </button>
-                <button
-                  onClick={() => setActiveLine('west-nile')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                    activeLine === 'west-nile'
-                      ? 'bg-sky-500 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  West Nile
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Timeline List */}
-          <div className="space-y-6">
-            {lineStations.map((st: any, idx: number) => {
-              const isFirst = idx === 0;
-              const isLast = idx === lineStations.length - 1;
-              const transferNote = st.transfer || st.note;
-
-              return (
-                <div key={st.id || idx} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-none">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-slate-900">
-                      {getStationName(st.name, lang)}
-                    </span>
-
-                    {transferNote && (
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                        {typeof transferNote === 'object' ? getStationName(transferNote, lang) : transferNote}
-                      </span>
-                    )}
-
-                    {isFirst && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500">
-                        Line start
-                      </span>
-                    )}
-                    {isLast && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500">
-                        Line end
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="w-4 h-4 rounded-full border-2 border-blue-600 bg-white"></div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-8 pt-4 border-t border-slate-100 text-xs text-slate-400 flex items-center justify-between">
-            <span>Data is based on official monorail project announcements and subject to change.</span>
-            <span className="font-bold text-slate-600">National Authority for Tunnels</span>
-          </div>
-
-        </div>
-
-        {/* Right Column: Dark Blue Monorail Card */}
-        <div className="lg:col-span-3">
-          <div className="bg-blue-900 text-white rounded-3xl p-6 shadow-sm flex flex-col justify-between min-h-[400px]">
-            <div>
-              <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center text-slate-950 font-bold text-xl mb-4">
-                M
-              </div>
-              <h2 className="text-xl font-bold mb-2">Driverless trains</h2>
-              <p className="text-xs text-blue-200 leading-relaxed">
-                The monorail operates automatically with platform screen doors for safety.
-              </p>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-blue-800">
-              <span className="text-[10px] text-blue-300 font-bold uppercase tracking-wider block">
-                Coming soon
-              </span>
-              <h3 className="text-lg font-bold text-yellow-400">West Nile Line</h3>
-              <p className="text-xs text-blue-200 mt-0.5">
-                Under construction: {meta?.totalStations || 13} stations
-              </p>
-            </div>
-          </div>
-        </div>
-
+    <div className={`subpage ${isAr ? 'dir-rtl' : 'dir-ltr'}`}>
+      <div className="page-heading">
+        <span className="eyebrow green">{isAr ? 'شبكة المونوريل' : 'Monorail Network'}</span>
+        <h1>{isAr ? 'كل محطة، في مكان واحد.' : 'Every station, in one place.'}</h1>
+        <p>
+          {isAr
+            ? 'محطات خط شرق النيل بالترتيب، من الاستاد في مدينة نصر لحد مدينة العدالة في العاصمة الإدارية.'
+            : 'East Nile line stations in order, from Stadium in Nasr City to Justice City in the Administrative Capital.'}
+        </p>
       </div>
+
+      <div className="stat-grid">
+        <div className="stat-card">
+          <span>{isAr ? 'عدد المحطات' : 'Number of Stations'}</span>
+          <strong>{num(line.stationCount, locale)}</strong>
+        </div>
+        <div className="stat-card">
+          <span>{isAr ? 'طول الخط' : 'Line Length'}</span>
+          <strong>
+            {num(line.lengthKm, locale)} <small>{isAr ? 'كم' : 'km'}</small>
+          </strong>
+        </div>
+        <div className="stat-card">
+          <span>{isAr ? 'زمن الرحلة الكاملة' : 'Full Trip Duration'}</span>
+          <strong>
+            {isAr ? '٦٠–٧٠' : '60–70'} <small>{isAr ? 'دقيقة' : 'min'}</small>
+          </strong>
+        </div>
+        <div className="stat-card">
+          <span>{isAr ? 'ساعات التشغيل' : 'Operating Hours'}</span>
+          <strong className="stat-small">{operatingHours}</strong>
+        </div>
+      </div>
+
+      <div className="network-layout">
+        <div className="network-card">
+          <div className="network-header">
+            <div>
+              <span className="eyebrow green">{isAr ? 'دليل المحطات' : 'Stations Guide'}</span>
+              <h2>{lineName}</h2>
+            </div>
+            <span className="network-count">
+              {num(path.names.length, locale)} {isAr ? 'محطة' : 'stations'}
+            </span>
+          </div>
+
+          {groups.map((group) => (
+            <div className="network-branch" key={group.area}>
+              <h3>{getAreaName(group.area, lang)}</h3>
+              <div className="network-stations" style={{ '--line-color': lineColors['east-nile'] } as CSSProperties}>
+                {group.names.map((name) => {
+                  const station = stationById.get(name)!;
+                  const isTerminal = ++counter === 1 || counter === path.names.length;
+                  return (
+                    <div className="network-station" key={name}>
+                      <span className={`network-node ${station.connections.length ? 'interchange' : ''}`} />
+                      <span className="network-name">{getStationName(name, lang)}</span>
+                      {station.connections.map((c) => (
+                        <span key={typeof c.label === 'string' ? c.label : c.label.ar} className={`interchange-label ${c.status === 'planned' ? 'planned' : ''}`}>
+                          {c.status === 'active' ? (isAr ? 'تبديل: ' : 'Transfer: ') : ''}
+                          {formatLabel(c.label, lang)}
+                        </span>
+                      ))}
+                      {isTerminal && (
+                        <span className="terminal-label">
+                          {counter === 1 ? (isAr ? 'بداية الخط' : 'Line start') : (isAr ? 'نهاية الخط' : 'Line end')}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {/* West Nile: information only, no booking yet */}
+          <div className="network-header">
+            <div>
+              <span className="eyebrow green">{isAr ? 'قريباً' : 'Coming soon'}</span>
+              <h2>{westName}</h2>
+            </div>
+            <span className="network-count">{westStatus}</span>
+          </div>
+          <p className="source-note">
+            {num(westNile.stationCount, locale)} {isAr ? 'محطة' : 'stations'} · {num(westNile.lengthKm, locale)} {isAr ? 'كم.' : 'km.'}{' '}
+            {westNoteText}
+          </p>
+
+          {westPhases.map(({ phase, title }) => (
+            <div className="network-branch" key={phase}>
+              <h3>{title}</h3>
+              <div className="network-stations" style={{ '--line-color': WEST_COLOR } as CSSProperties}>
+                {westStations
+                  .filter((station) => station.phase === phase)
+                  .map((station) => (
+                    <div className="network-station" key={station.name}>
+                      <span className={`network-node ${station.connections.length ? 'interchange' : ''}`} />
+                      <span className="network-name">{getStationName(station.name, lang)}</span>
+                      {station.connections.map((c) => (
+                        <span key={typeof c === 'string' ? c : c.ar} className="interchange-label planned">
+                          {formatLabel(c, lang)}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <aside className="network-aside">
+          <div className="aside-symbol">
+            <Icon name="monorail" size={26} />
+          </div>
+          <h3>{isAr ? 'قطارات بدون سائق، فوق الزحمة.' : 'Driverless trains, above traffic.'}</h3>
+          <p>
+            {isAr
+              ? 'المونوريل بيشتغل أوتوماتيك على كوبري علوي، ومحطاته فيها أبواب رصيف للأمان.'
+              : 'The monorail operates automatically on an elevated viaduct, with platform screen doors for safety.'}
+          </p>
+          <div className="aside-divider" />
+          {plannedLines.map((planned) => (
+            <div className="aside-planned" key={planned.name}>
+              <span>{isAr ? 'قريباً' : 'Coming soon'}</span>
+              <strong>{isAr ? planned.name : formatLabel(planned.name, lang)}</strong>
+              <small>
+                {isAr
+                  ? planned.description
+                  : 'Under construction: 13 stations from 6th of October to Wadi El Nile'}
+              </small>
+            </div>
+          ))}
+        </aside>
+      </div>
+
+      <p className="source-note">
+        {isAr
+          ? 'البيانات مبنية على الإعلانات الرسمية لمشروع المونوريل، وممكن تتغير. '
+          : 'Data is based on official monorail project announcements and subject to change. '}
+        <a href={OFFICIAL_URL} target="_blank" rel="noreferrer">
+          {isAr ? 'الهيئة القومية للأنفاق' : 'National Authority for Tunnels'} <Icon name="external" size={13} />
+        </a>
+      </p>
     </div>
   );
 }
