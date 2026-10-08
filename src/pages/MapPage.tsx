@@ -8,7 +8,6 @@ interface MapPageProps {
   onSelectStation?: (stationId: string) => void;
 }
 
-// Helper for safe line checking (Station type uses `lines: string[]`)
 const hasLine = (st: any, lineId: string): boolean => {
   if (Array.isArray(st.lines)) return st.lines.includes(lineId);
   if (st.line) return st.line === lineId;
@@ -18,41 +17,32 @@ const hasLine = (st: any, lineId: string): boolean => {
 export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
   const { lang } = useLanguage();
 
-  // Selection states for origin and destination
   const [originStationId, setOriginStationId] = useState<string | null>('st-1');
   const [destinationStationId, setDestinationStationId] = useState<string | null>('st-5');
   const [activeSelectMode, setActiveSelectMode] = useState<'origin' | 'destination'>('origin');
 
-  // Map Filter state
   const [selectedLine, setSelectedLine] = useState<'all' | 'east-nile' | 'west-nile'>('east-nile');
   const [searchQuery, setSearchQuery] = useState('');
   const [hoveredStationId, setHoveredStationId] = useState<string | null>(null);
-
-  // Toast message state for West Line under construction warning
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Zoom & Drag Pan States
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Network Colors & Metadata
   const colors = lineColors as Record<string, string>;
   const meta = lineMeta as Record<string, any>;
 
   const eastColor = colors['east-nile'] || '#EAB308';
-  const westColor = '#0284C7'; // Blue for West Line
+  const westColor = '#0284C7';
 
-  // East Line & West Line Station Arrays
   const eastStations = useMemo(() => stations.filter((s) => hasLine(s, 'east-nile')), []);
   const westStations = useMemo(() => stations.filter((s) => hasLine(s, 'west-nile')), []);
 
-  // Origin & Destination Objects
   const originStation = useMemo(() => stations.find((s) => s.id === originStationId) || null, [originStationId]);
   const destinationStation = useMemo(() => stations.find((s) => s.id === destinationStationId) || null, [destinationStationId]);
 
-  // Filtered station list for sidebar search
   const displayedStations = useMemo(() => {
     let result = stations;
     if (selectedLine !== 'all') {
@@ -69,11 +59,8 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
     return result;
   }, [selectedLine, searchQuery, lang]);
 
-  // Generate smooth clean layout coordinates for SVG rendering
   const stationCoordsMap = useMemo(() => {
     const map: Record<string, { x: number; y: number }> = {};
-    
-    // East Line (Active): Nasr City (460, 360) -> New Capital (880, 100)
     const eTotal = eastStations.length || 1;
     eastStations.forEach((st, idx) => {
       const t = idx / Math.max(1, eTotal - 1);
@@ -82,7 +69,6 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
       map[st.id] = { x, y };
     });
 
-    // West Line (Under Construction): October (140, 480) -> Wadi El-Nile (460, 360)
     const wTotal = westStations.length || 1;
     westStations.forEach((st, idx) => {
       const t = idx / Math.max(1, wTotal - 1);
@@ -94,30 +80,17 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
     return map;
   }, [eastStations, westStations]);
 
-  // Polyline SVG path strings
   const eastPolylinePoints = useMemo(() => {
-    return eastStations
-      .map((st) => stationCoordsMap[st.id])
-      .filter(Boolean)
-      .map((pt) => `${pt.x},${pt.y}`)
-      .join(' ');
+    return eastStations.map((st) => stationCoordsMap[st.id]).filter(Boolean).map((pt) => `${pt.x},${pt.y}`).join(' ');
   }, [eastStations, stationCoordsMap]);
 
   const westPolylinePoints = useMemo(() => {
-    return westStations
-      .map((st) => stationCoordsMap[st.id])
-      .filter(Boolean)
-      .map((pt) => `${pt.x},${pt.y}`)
-      .join(' ');
+    return westStations.map((st) => stationCoordsMap[st.id]).filter(Boolean).map((pt) => `${pt.x},${pt.y}`).join(' ');
   }, [westStations, stationCoordsMap]);
 
-  // Handle station selection
   const handleSelectStation = (st: any) => {
-    const isWestLine = hasLine(st, 'west-nile');
-
-    // West Line is under construction!
-    if (isWestLine) {
-      setToastMessage(`🚧 محطة (${getStationName(st.name, lang)}) ضمن الخط الغربي (تحت الإنشاء والتشغيل التجريبي قريباً)`);
+    if (hasLine(st, 'west-nile')) {
+      setToastMessage(`🚧 محطة (${getStationName(st.name, lang)}) ضمن الخط الغربي (تحت الإنشاء)`);
       setTimeout(() => setToastMessage(null), 4000);
       return;
     }
@@ -126,26 +99,26 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
     if (activeSelectMode === 'origin') {
       setOriginStationId(id);
       setActiveSelectMode('destination');
-      if (destinationStationId === id) {
-        setDestinationStationId(null);
-      }
+      if (destinationStationId === id) setDestinationStationId(null);
     } else {
       if (id === originStationId) return;
       setDestinationStationId(id);
     }
 
-    if (onSelectStation) {
-      onSelectStation(id);
-    }
+    if (onSelectStation) onSelectStation(id);
   };
 
-  // Reset Map View Pan & Zoom
   const handleResetView = () => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
   };
 
-  // Dragging Mouse Handlers
+  const handleResetRoute = () => {
+    setOriginStationId(null);
+    setDestinationStationId(null);
+    setActiveSelectMode('origin');
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     setIsDragging(true);
@@ -154,24 +127,11 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
-    setPan({
-      x: e.clientX - dragStartRef.current.x,
-      y: e.clientY - dragStartRef.current.y,
-    });
+    setPan({ x: e.clientX - dragStartRef.current.x, y: e.clientY - dragStartRef.current.y });
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
+  const handleMouseUp = () => setIsDragging(false);
 
-  // Reset route selection
-  const handleResetRoute = () => {
-    setOriginStationId(null);
-    setDestinationStationId(null);
-    setActiveSelectMode('origin');
-  };
-
-  // Handle CTA Booking
   const handleBookTicket = () => {
     if (originStationId && destinationStationId && onTicket) {
       onTicket(originStationId, destinationStationId);
@@ -181,222 +141,112 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
   return (
     <div className="subpage w-full min-h-screen bg-slate-50 text-slate-800 p-4 md:p-6 lg:p-8 font-sans dir-rtl">
       
-      {/* Top Header */}
+      {/* Header */}
       <div className="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-full mb-2 border border-amber-200">
             <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-            خريطة لوحة التحكم التفاعلية الشاملة 2026
+            خريطة تفاعلية شاملة 2026
           </div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
             خريطة مونوريل القاهرة الكبرى
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            خطان .. مدينة واحدة | مشروع المونوريل يربط شرق وغرب القاهرة الكبرى بسرعة وأمان
+            خطان .. مدينة واحدة | اسحب الخريطة في أي اتجاه للتنقل
           </p>
         </div>
 
-        {/* Action Quick Stats */}
         <div className="flex items-center gap-3">
           <div className="bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
             <div className="w-3 h-3 rounded-full bg-amber-400"></div>
             <div>
-              <div className="text-xs text-slate-400 font-medium">شرق النيل (يعمل)</div>
-              <div className="text-sm font-bold text-slate-800">{meta?.['east-nile']?.totalStations || 22} محطة | 56.5 كم</div>
+              <div className="text-xs text-slate-400 font-medium">شرق النيل</div>
+              <div className="text-sm font-bold text-slate-800">{meta?.['east-nile']?.totalStations || 22} محطة</div>
             </div>
           </div>
           <div className="bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
             <div className="w-3 h-3 rounded-full bg-sky-500 border border-dashed border-slate-400"></div>
             <div>
-              <div className="text-xs text-slate-400 font-medium">غرب النيل (قريباً 🚧)</div>
-              <div className="text-sm font-bold text-slate-800">{meta?.['west-nile']?.totalStations || 13} محطة | 43.8 كم</div>
+              <div className="text-xs text-slate-400 font-medium">غرب النيل (🚧)</div>
+              <div className="text-sm font-bold text-slate-800">{meta?.['west-nile']?.totalStations || 13} محطة</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Toast Notice Banner for Under Construction Alert */}
       {toastMessage && (
-        <div className="max-w-7xl mx-auto mb-4 p-3.5 bg-amber-500 text-slate-950 rounded-2xl font-bold text-xs shadow-md border border-amber-400 flex items-center justify-between animate-bounce">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🚧</span>
-            <span>{toastMessage}</span>
-          </div>
-          <button onClick={() => setToastMessage(null)} className="text-slate-900 font-extrabold text-sm px-2">✕</button>
+        <div className="max-w-7xl mx-auto mb-4 p-3 bg-amber-500 text-slate-950 rounded-2xl font-bold text-xs shadow-md border border-amber-400 flex items-center justify-between">
+          <span>{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="font-extrabold px-2">✕</button>
         </div>
       )}
 
-      {/* Main 3-Column Layout Dashboard Grid */}
+      {/* Main Grid */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* Left Column (3 cols): Line Cards Overview & Promo Banner */}
+        {/* Left Column */}
         <div className="lg:col-span-3 flex flex-col gap-4">
-          
-          {/* East Line Overview Card */}
           <div 
             onClick={() => setSelectedLine('east-nile')}
-            className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer shadow-xs relative overflow-hidden ${
-              selectedLine === 'east-nile' 
-                ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-400 ring-2 ring-amber-400/20' 
-                : 'bg-white border-slate-200 hover:border-amber-300 hover:shadow-md'
+            className={`p-5 rounded-2xl border transition cursor-pointer shadow-xs ${
+              selectedLine === 'east-nile' ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-400/20' : 'bg-white border-slate-200'
             }`}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 font-extrabold flex items-center justify-center text-base shadow-xs">
-                  ←
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base">الخط الشرقي</h3>
-                  <span className="text-xs text-emerald-600 font-extrabold">● يعمل حالياً</span>
-                </div>
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-slate-900">الخط الشرقي</h3>
               <span className="w-3 h-3 rounded-full bg-amber-400"></span>
             </div>
-            <p className="text-xs text-slate-500">مدينة نصر ↔ العاصمة الإدارية الجديدة</p>
-
-            <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-amber-200/50 text-center">
-              <div className="bg-white/80 p-2 rounded-lg border border-amber-100">
-                <div className="text-[10px] text-slate-400">المحطات</div>
-                <div className="text-xs font-extrabold text-slate-800">22</div>
-              </div>
-              <div className="bg-white/80 p-2 rounded-lg border border-amber-100">
-                <div className="text-[10px] text-slate-400">الطول</div>
-                <div className="text-xs font-extrabold text-slate-800">56.5 كم</div>
-              </div>
-              <div className="bg-white/80 p-2 rounded-lg border border-amber-100">
-                <div className="text-[10px] text-slate-400">السرعة</div>
-                <div className="text-xs font-extrabold text-slate-800">80 كم/س</div>
-              </div>
-            </div>
+            <p className="text-xs text-slate-500">مدينة نصر ↔ العاصمة الإدارية</p>
           </div>
 
-          {/* West Line Overview Card (Under Construction) */}
           <div 
             onClick={() => setSelectedLine('west-nile')}
-            className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer shadow-xs relative overflow-hidden ${
-              selectedLine === 'west-nile' 
-                ? 'bg-gradient-to-br from-sky-50 to-blue-50 border-sky-400 ring-2 ring-sky-400/20' 
-                : 'bg-white border-slate-200 hover:border-sky-300 hover:shadow-md'
+            className={`p-5 rounded-2xl border transition cursor-pointer shadow-xs ${
+              selectedLine === 'west-nile' ? 'bg-sky-50 border-sky-400 ring-2 ring-sky-400/20' : 'bg-white border-slate-200'
             }`}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-500 text-white font-extrabold flex items-center justify-center text-base shadow-xs">
-                  ←
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base">الخط الغربي</h3>
-                  <span className="text-xs text-amber-600 font-extrabold">🚧 تحت الإنشاء</span>
-                </div>
-              </div>
-              <span className="w-3 h-3 rounded-full bg-sky-500"></span>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-slate-900">الخط الغربي</h3>
+              <span className="text-xs text-amber-600 font-extrabold">🚧 تحت الإنشاء</span>
             </div>
-            <p className="text-xs text-slate-500">6 أكتوبر ↔ وادي النيل / المهندسين</p>
-
-            <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-sky-200/50 text-center">
-              <div className="bg-white/80 p-2 rounded-lg border border-sky-100">
-                <div className="text-[10px] text-slate-400">المحطات</div>
-                <div className="text-xs font-extrabold text-slate-800">13</div>
-              </div>
-              <div className="bg-white/80 p-2 rounded-lg border border-sky-100">
-                <div className="text-[10px] text-slate-400">الطول</div>
-                <div className="text-xs font-extrabold text-slate-800">43.8 كم</div>
-              </div>
-              <div className="bg-white/80 p-2 rounded-lg border border-sky-100">
-                <div className="text-[10px] text-slate-400">السرعة</div>
-                <div className="text-xs font-extrabold text-slate-800">80 كم/س</div>
-              </div>
-            </div>
+            <p className="text-xs text-slate-500">6 أكتوبر ↔ وادي النيل</p>
           </div>
 
-          {/* Reset Filter Button */}
           {selectedLine !== 'all' && (
             <button 
               onClick={() => setSelectedLine('all')}
-              className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition border border-slate-200 flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border border-slate-200"
             >
-              <span>إظهار الشبكة بالكامل</span>
+              إظهار الشبكة بالكامل
             </button>
           )}
-
-          {/* Vision Promo Card */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-5 rounded-2xl shadow-md border border-slate-700 flex flex-col justify-between min-h-[150px] relative overflow-hidden">
-            <div className="relative z-10">
-              <span className="text-amber-400 text-xs font-bold uppercase tracking-wider">رؤية مصر 2030</span>
-              <h4 className="text-base font-extrabold mt-1">مستقبل أسرع للحركة</h4>
-              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                تنقل ذكي صديق للبيئة يربط كافة المحاور الرئيسية في القاهرة الكبرى.
-              </p>
-            </div>
-            <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-amber-400/10 rounded-full blur-xl pointer-events-none"></div>
-          </div>
         </div>
 
-        {/* Center Column (6 cols): Topographic Drag-to-Pan Interactive Canvas */}
+        {/* Center Canvas */}
         <div className="lg:col-span-6 flex flex-col gap-4">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden relative min-h-[580px] flex flex-col justify-between">
             
-            {/* Map Top Header Controls Bar */}
-            <div className="p-3 flex items-center justify-between border-b border-slate-100 bg-white/95 backdrop-blur-sm z-20">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs border border-slate-200">
-                  N
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-800 block">الخريطة التضاريسية التفاعلية</span>
-                  <span className="text-[10px] text-slate-400">💡 اسحب بالماوس للتحرك في الخريطة</span>
-                </div>
-              </div>
+            <div className="p-3 flex items-center justify-between border-b border-slate-100 bg-white/95 z-20">
+              <span className="text-xs font-bold text-slate-800">
+                {activeSelectMode === 'origin' ? '📍 اختر محطة القيام (من)' : '🏁 اختر محطة الوصول (إلى)'}
+              </span>
 
-              {/* Mode indicator & Zoom Controls */}
               <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleResetRoute}
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200"
+                  title="مسح التحديد"
+                >
+                  ⟲ مسح
+                </button>
                 <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                  <button
-                    onClick={() => setActiveSelectMode('origin')}
-                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition ${
-                      activeSelectMode === 'origin' ? 'bg-amber-400 text-slate-950 shadow-xs' : 'text-slate-600'
-                    }`}
-                  >
-                    📍 القيام
-                  </button>
-                  <button
-                    onClick={() => setActiveSelectMode('destination')}
-                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition ${
-                      activeSelectMode === 'destination' ? 'bg-sky-500 text-white shadow-xs' : 'text-slate-600'
-                    }`}
-                  >
-                    🏁 الوصول
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                  <button
-                    onClick={() => setZoom((z) => Math.min(2.2, z + 0.2))}
-                    className="w-7 h-7 rounded-lg bg-white shadow-xs flex items-center justify-center text-slate-700 font-bold hover:bg-slate-50 transition"
-                    title="تكبير"
-                  >
-                    +
-                  </button>
-                  <button
-                    onClick={() => setZoom((z) => Math.max(0.6, z - 0.2))}
-                    className="w-7 h-7 rounded-lg bg-white shadow-xs flex items-center justify-center text-slate-700 font-bold hover:bg-slate-50 transition"
-                    title="تصغير"
-                  >
-                    -
-                  </button>
-                  <button
-                    onClick={handleResetView}
-                    className="w-7 h-7 rounded-lg bg-white shadow-xs flex items-center justify-center text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
-                    title="إعادة تلمركز"
-                  >
-                    ⟲
-                  </button>
+                  <button onClick={() => setZoom((z) => Math.min(2.2, z + 0.2))} className="w-7 h-7 rounded bg-white shadow-xs font-bold">+</button>
+                  <button onClick={() => setZoom((z) => Math.max(0.6, z - 0.2))} className="w-7 h-7 rounded bg-white shadow-xs font-bold">-</button>
+                  <button onClick={handleResetView} className="w-7 h-7 rounded bg-white shadow-xs text-xs font-bold">⟲</button>
                 </div>
               </div>
             </div>
 
-            {/* SVG Interactive Canvas Container with Drag-to-Pan */}
             <div 
               className={`relative flex-1 w-full bg-[#edf4f0] overflow-hidden select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
               onMouseDown={handleMouseDown}
@@ -406,120 +256,34 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
               style={{ minHeight: '480px' }}
             >
               <div 
-                className="w-full h-full transition-transform duration-75 ease-out origin-center"
+                className="w-full h-full transition-transform duration-75 origin-center"
                 style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
               >
-                <svg
-                  viewBox="0 0 1000 620"
-                  className="w-full h-full"
-                  style={{ minHeight: '480px' }}
-                >
+                <svg viewBox="0 0 1000 620" className="w-full h-full" style={{ minHeight: '480px' }}>
                   <defs>
                     <linearGradient id="nileGrad3D" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.85" />
                       <stop offset="100%" stopColor="#0284c7" stopOpacity="0.95" />
                     </linearGradient>
-
-                    <pattern id="topoGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#dcfce7" strokeWidth="1" opacity="0.4" />
-                    </pattern>
                   </defs>
 
-                  {/* Topographic Ground Base Texture */}
                   <rect width="1000" height="620" fill="#f4f7f4" />
-                  <rect width="1000" height="620" fill="url(#topoGrid)" />
+                  <path d="M 460 0 C 470 120, 510 240, 480 360 C 450 440, 480 530, 500 620" fill="none" stroke="url(#nileGrad3D)" strokeWidth="42" strokeLinecap="round" />
+                  <text x="495" y="280" fill="#ffffff" fontSize="13" fontWeight="extrabold" transform="rotate(-75 495 280)">نهر النيل 🌊</text>
 
-                  {/* Contour Elevation Curves */}
-                  <g fill="none" stroke="#d1fae5" strokeWidth="1.5" opacity="0.6">
-                    <path d="M 0 100 Q 250 80, 500 140 T 1000 120" />
-                    <path d="M 0 200 Q 300 180, 600 240 T 1000 220" />
-                    <path d="M 0 350 Q 350 320, 700 400 T 1000 380" />
-                    <path d="M 0 500 Q 200 460, 550 520 T 1000 490" />
-                  </g>
-
-                  {/* Green Park / Agricultural Land Shading */}
-                  <g fill="#dcfce7" opacity="0.5">
-                    <path d="M 520 200 C 580 180, 650 210, 620 280 C 590 320, 510 300, 520 200 Z" />
-                    <path d="M 180 380 C 240 360, 310 400, 280 460 C 220 480, 160 440, 180 380 Z" />
-                    <path d="M 750 320 C 820 300, 880 350, 840 420 C 780 440, 720 390, 750 320 Z" />
-                  </g>
-
-                  {/* Highways & Ring Road Overlays */}
-                  <g stroke="#cbd5e1" strokeWidth="3" fill="none" strokeDasharray="6,4" opacity="0.7">
-                    <ellipse cx="500" cy="320" rx="340" ry="220" />
-                    <line x1="100" y1="360" x2="900" y2="360" />
-                    <line x1="460" y1="50" x2="460" y2="580" />
-                  </g>
-
-                  {/* Stylized River Nile Path */}
-                  <path
-                    d="M 460 0 C 470 120, 510 240, 480 360 C 450 440, 480 530, 500 620"
-                    fill="none"
-                    stroke="url(#nileGrad3D)"
-                    strokeWidth="42"
-                    strokeLinecap="round"
-                  />
-                  <text x="495" y="280" fill="#ffffff" fontSize="13" fontWeight="extrabold" opacity="0.9" transform="rotate(-75 495 280)">
-                    نهر النيل 🌊
-                  </text>
-
-                  {/* Topographic Region Text Labels */}
                   <text x="830" y="80" fill="#334155" fontSize="14" fontWeight="extrabold">العاصمة الإدارية الجديدة</text>
                   <text x="680" y="440" fill="#475569" fontSize="14" fontWeight="bold">القاهرة الجديدة</text>
-                  <text x="690" y="470" fill="#64748b" fontSize="12">التجمع الخامس</text>
-                  <text x="540" y="140" fill="#475569" fontSize="13" fontWeight="bold">مطار القاهرة الدولي ✈</text>
                   <text x="475" y="320" fill="#0f172a" fontSize="16" fontWeight="black">القاهرة الكبرى</text>
                   <text x="210" y="490" fill="#334155" fontSize="14" fontWeight="extrabold">مدينة 6 أكتوبر</text>
-                  <text x="310" y="400" fill="#64748b" fontSize="12" fontWeight="bold">الشيخ زايد</text>
 
-                  {/* West Nile Transit Line Path (Under Construction - Dashed Blue) */}
                   {(selectedLine === 'all' || selectedLine === 'west-nile') && (
-                    <g>
-                      <polyline
-                        points={westPolylinePoints}
-                        fill="none"
-                        stroke="#94a3b8"
-                        strokeWidth="12"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        opacity="0.6"
-                      />
-                      <polyline
-                        points={westPolylinePoints}
-                        fill="none"
-                        stroke={westColor}
-                        strokeWidth="8"
-                        strokeDasharray="10,6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </g>
+                    <polyline points={westPolylinePoints} fill="none" stroke={westColor} strokeWidth="8" strokeDasharray="10,6" strokeLinecap="round" />
                   )}
 
-                  {/* East Nile Transit Line Path (Active - Glowing Yellow) */}
                   {(selectedLine === 'all' || selectedLine === 'east-nile') && (
-                    <g>
-                      <polyline
-                        points={eastPolylinePoints}
-                        fill="none"
-                        stroke={eastColor}
-                        strokeWidth="10"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <polyline
-                        points={eastPolylinePoints}
-                        fill="none"
-                        stroke="#ffffff"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        opacity="0.9"
-                      />
-                    </g>
+                    <polyline points={eastPolylinePoints} fill="none" stroke={eastColor} strokeWidth="10" strokeLinecap="round" />
                   )}
 
-                  {/* Dynamic Active Connecting Segment Line when both stations are selected */}
                   {originStationId && destinationStationId && stationCoordsMap[originStationId] && stationCoordsMap[destinationStationId] && (
                     <line
                       x1={stationCoordsMap[originStationId].x}
@@ -533,7 +297,6 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                     />
                   )}
 
-                  {/* Render Interactive Station Nodes */}
                   {stations.map((st) => {
                     if (selectedLine !== 'all' && !hasLine(st, selectedLine)) return null;
                     const coords = stationCoordsMap[st.id];
@@ -543,7 +306,7 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                     const isOrigin = originStationId === st.id;
                     const isDestination = destinationStationId === st.id;
                     const isHovered = hoveredStationId === st.id;
-                    
+
                     let nodeColor = isWestLine ? westColor : eastColor;
                     if (isOrigin) nodeColor = '#f59e0b';
                     if (isDestination) nodeColor = '#0284c7';
@@ -555,62 +318,16 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                         onClick={() => handleSelectStation(st)}
                         onMouseEnter={() => setHoveredStationId(st.id)}
                         onMouseLeave={() => setHoveredStationId(null)}
-                        className="cursor-pointer group"
+                        className="cursor-pointer"
                       >
-                        {/* Selected / Hovered Pulse Ring */}
-                        {(isOrigin || isDestination || isHovered) && (
-                          <circle
-                            r={isOrigin || isDestination ? 20 : 14}
-                            fill={isOrigin ? '#f59e0b' : isDestination ? '#0284c7' : nodeColor}
-                            opacity="0.3"
-                            className="animate-ping"
-                          />
-                        )}
+                        <circle r={isOrigin || isDestination ? 12 : 8} fill="#ffffff" stroke={nodeColor} strokeWidth={3} />
+                        <circle r={isOrigin || isDestination ? 6 : 4} fill={nodeColor} />
 
-                        {/* Node Outer Circle */}
-                        <circle
-                          r={isOrigin || isDestination ? 12 : isWestLine ? 7 : 8}
-                          fill={isWestLine ? '#f1f5f9' : '#ffffff'}
-                          stroke={nodeColor}
-                          strokeWidth={isOrigin || isDestination ? 4 : isWestLine ? 2 : 3}
-                          strokeDasharray={isWestLine && !isOrigin && !isDestination ? '3,2' : undefined}
-                          className="transition-all duration-200 group-hover:scale-125"
-                        />
-
-                        {/* Node Inner Core Dot */}
-                        <circle
-                          r={isOrigin || isDestination ? 6 : isWestLine ? 3 : 4}
-                          fill={nodeColor}
-                        />
-
-                        {/* Station Name Badge */}
                         {(isOrigin || isDestination || isHovered || isWestLine) && (
-                          <g transform="translate(0, -22)" className="pointer-events-none">
-                            <rect
-                              x={isWestLine ? "-60" : "-55"}
-                              y="-16"
-                              width={isWestLine ? "120" : "110"}
-                              height="24"
-                              rx="12"
-                              fill={isOrigin ? '#f59e0b' : isDestination ? '#0284c7' : isWestLine ? '#475569' : '#0f172a'}
-                              stroke="#ffffff"
-                              strokeWidth="1.5"
-                            />
-                            <text
-                              x="0"
-                              y="0"
-                              textAnchor="middle"
-                              fill="#ffffff"
-                              fontSize="10"
-                              fontWeight="bold"
-                            >
-                              {isOrigin 
-                                ? `📍 من: ${getStationName(st.name, lang)}` 
-                                : isDestination 
-                                ? `🏁 إلى: ${getStationName(st.name, lang)}` 
-                                : isWestLine 
-                                ? `🚧 ${getStationName(st.name, lang)}` 
-                                : getStationName(st.name, lang)}
+                          <g transform="translate(0, -22)">
+                            <rect x="-55" y="-16" width="110" height="24" rx="12" fill={isOrigin ? '#f59e0b' : isDestination ? '#0284c7' : '#0f172a'} />
+                            <text x="0" y="0" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold">
+                              {isOrigin ? `📍 ${getStationName(st.name, lang)}` : isDestination ? `🏁 ${getStationName(st.name, lang)}` : isWestLine ? `🚧 ${getStationName(st.name, lang)}` : getStationName(st.name, lang)}
                             </text>
                           </g>
                         )}
@@ -619,212 +336,64 @@ export default function MapPage({ onTicket, onSelectStation }: MapPageProps) {
                   })}
                 </svg>
               </div>
-
-              {/* Map Floating Legend */}
-              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-slate-200 shadow-md flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-700 z-10">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-amber-400"></span>
-                  <span>الخط الشرقي (يعمل)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-sky-500 border border-dashed border-slate-400"></span>
-                  <span>الخط الغربي (تحت الإنشاء 🚧)</span>
-                </div>
-              </div>
             </div>
 
-            {/* Selected Station Route Summary & Booking Bar */}
+            {/* Bottom Bar */}
             <div className="p-4 bg-slate-900 text-white flex flex-col md:flex-row items-center justify-between gap-4 border-t border-slate-800 z-20">
-              <div className="flex items-center gap-3 w-full md:w-auto">
-                
-                {/* Origin Badge */}
-                <div className="flex items-center gap-2 bg-slate-800 p-2.5 rounded-xl border border-slate-700 flex-1 md:flex-initial">
-                  <span className="text-base">📍</span>
-                  <div>
-                    <div className="text-[10px] text-amber-400 font-bold uppercase">القيام (من)</div>
-                    <div className="text-xs font-bold text-white">
-                      {originStation ? getStationName(originStation.name, lang) : 'لم تحدد'}
-                    </div>
-                  </div>
-                </div>
-
-                <span className="text-slate-400 font-bold text-sm hidden md:inline">←</span>
-
-                {/* Destination Badge */}
-                <div className="flex items-center gap-2 bg-slate-800 p-2.5 rounded-xl border border-slate-700 flex-1 md:flex-initial">
-                  <span className="text-base">🏁</span>
-                  <div>
-                    <div className="text-[10px] text-sky-400 font-bold uppercase">الوصول (إلى)</div>
-                    <div className="text-xs font-bold text-white">
-                      {destinationStation ? getStationName(destinationStation.name, lang) : 'حددها على الخريطة'}
-                    </div>
-                  </div>
-                </div>
+              <div className="flex items-center gap-3">
+                <div className="text-xs font-bold">📍 القيام: {originStation ? getStationName(originStation.name, lang) : 'لم تحدد'}</div>
+                <div className="text-xs font-bold text-sky-400">🏁 الوصول: {destinationStation ? getStationName(destinationStation.name, lang) : 'لم تحدد'}</div>
               </div>
 
-              {/* Action Ticket Booking CTA */}
               <button
                 onClick={handleBookTicket}
                 disabled={!originStationId || !destinationStationId}
-                className={`w-full md:w-auto px-6 py-3 text-xs font-extrabold rounded-xl transition shadow-md flex items-center justify-center gap-2 ${
+                className={`px-6 py-2.5 text-xs font-extrabold rounded-xl transition ${
                   originStationId && destinationStationId
-                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 cursor-pointer'
-                    : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                    ? 'bg-amber-400 text-slate-950 hover:bg-amber-500 cursor-pointer'
+                    : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                 }`}
               >
-                <span>🎟️</span>
-                <span>
-                  {originStation && destinationStation
-                    ? `حجز تذكرة من (${getStationName(originStation.name, lang)}) إلى (${getStationName(destinationStation.name, lang)})`
-                    : 'حدد المحطتين لحجز التذكرة'}
-                </span>
+                🎟️ حجز التذكرة
               </button>
             </div>
 
           </div>
         </div>
 
-        {/* Right Column (3 cols): Interactive Station Picker Panel */}
+        {/* Right Column */}
         <div className="lg:col-span-3 flex flex-col gap-4">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 flex flex-col min-h-[580px]">
-            
-            {/* Filter Line Switcher */}
-            <div className="flex bg-slate-100 p-1 rounded-2xl mb-4 border border-slate-200">
-              <button
-                onClick={() => setSelectedLine('east-nile')}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
-                  selectedLine === 'east-nile'
-                    ? 'bg-amber-400 text-slate-950 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                الشرقي
-              </button>
-              <button
-                onClick={() => setSelectedLine('west-nile')}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
-                  selectedLine === 'west-nile'
-                    ? 'bg-sky-500 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                الغربي 🚧
-              </button>
-              <button
-                onClick={() => setSelectedLine('all')}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
-                  selectedLine === 'all'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                الكل
-              </button>
+          <div className="bg-white rounded-3xl border border-slate-200 p-5 flex flex-col min-h-[580px]">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="ابحث عن محطة..."
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs mb-3"
+            />
+
+            <div className="flex-1 overflow-y-auto max-h-[420px] space-y-2 custom-scrollbar">
+              {displayedStations.map((st, idx) => {
+                const isWestLine = hasLine(st, 'west-nile');
+                const isOrigin = originStationId === st.id;
+                const isDestination = destinationStationId === st.id;
+
+                return (
+                  <div
+                    key={st.id}
+                    onClick={() => handleSelectStation(st)}
+                    className={`p-3 rounded-2xl border cursor-pointer flex items-center justify-between text-xs ${
+                      isOrigin ? 'bg-amber-400 text-slate-950 font-bold' : isDestination ? 'bg-sky-500 text-white font-bold' : 'bg-white text-slate-800'
+                    }`}
+                  >
+                    <span>{idx + 1}. {getStationName(st.name, lang)} {isWestLine ? '🚧' : ''}</span>
+                  </div>
+                );
+              })}
             </div>
-
-            {/* Search Field */}
-            <div className="relative mb-4">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ابحث عن محطة..."
-                className="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition"
-              />
-              <span className="absolute right-3 top-2.5 text-slate-400 text-sm">🔍</span>
-            </div>
-
-            {/* List Header & Guidance */}
-            <div className="flex items-center justify-between mb-3 text-xs font-bold text-slate-500 px-1">
-              <span>محطات الشبكة ({displayedStations.length})</span>
-              <span className="text-[11px] font-semibold text-amber-600">
-                {activeSelectMode === 'origin' ? 'حدد القيام 📍' : 'حدد الوصول 🏁'}
-              </span>
-            </div>
-
-            {/* Station List */}
-            <div className="flex-1 overflow-y-auto max-h-[400px] space-y-2 pr-1 custom-scrollbar">
-              {displayedStations.length === 0 ? (
-                <div className="text-center py-10 text-slate-400 text-xs">
-                  لا توجد محطات مطابقة
-                </div>
-              ) : (
-                displayedStations.map((st, idx) => {
-                  const isWestLine = hasLine(st, 'west-nile');
-                  const isOrigin = originStationId === st.id;
-                  const isDestination = destinationStationId === st.id;
-                  const isEast = hasLine(st, 'east-nile');
-                  const badgeBg = isEast ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600 border border-dashed border-slate-300';
-
-                  return (
-                    <div
-                      key={st.id}
-                      onClick={() => handleSelectStation(st)}
-                      className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                        isOrigin
-                          ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-md font-extrabold'
-                          : isDestination
-                          ? 'bg-sky-500 text-white border-sky-600 shadow-md font-extrabold'
-                          : isWestLine
-                          ? 'bg-slate-50 opacity-80 border-slate-200 text-slate-600 hover:bg-slate-100'
-                          : 'bg-white hover:bg-slate-50 border-slate-100 text-slate-800 hover:border-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span 
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0 ${
-                            isOrigin || isDestination ? 'bg-slate-900 text-white' : badgeBg
-                          }`}
-                        >
-                          {idx + 1}
-                        </span>
-                        <div>
-                          <div className="text-xs font-bold flex items-center gap-1.5">
-                            <span>{getStationName(st.name, lang)}</span>
-                            {isWestLine && <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded font-semibold">تحت الإنشاء 🚧</span>}
-                          </div>
-                          <div className={`text-[11px] ${isOrigin || isDestination ? 'opacity-80' : 'text-slate-500'}`}>
-                            {getStationName(st.area, lang)}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        {isOrigin && <span className="text-xs bg-slate-900 text-amber-400 px-2 py-0.5 rounded-full font-bold">القيام 📍</span>}
-                        {isDestination && <span className="text-xs bg-slate-900 text-sky-300 px-2 py-0.5 rounded-full font-bold">الوصول 🏁</span>}
-                        {!isOrigin && !isDestination && isWestLine && <span className="text-[11px] text-slate-400 font-bold">قريباً</span>}
-                        {!isOrigin && !isDestination && !isWestLine && <span className="text-xs text-slate-400">←</span>}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
           </div>
         </div>
 
-      </div>
-
-      {/* Bottom Footer Feature Bar */}
-      <div className="max-w-7xl mx-auto mt-6 bg-white border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-amber-400 flex items-center justify-center font-bold text-slate-950">
-            M
-          </div>
-          <div>
-            <div className="font-extrabold text-slate-800">مونوريل القاهرة الكبرى</div>
-            <div className="text-[11px] text-slate-400">ربط أفضل .. لحياة أسهل</div>
-          </div>
-        </div>
-
-        {/* Feature Highlights */}
-        <div className="flex items-center gap-6 text-slate-600 font-medium overflow-x-auto py-1">
-          <span className="flex items-center gap-1.5 whitespace-nowrap">❄️ تكييف كامل</span>
-          <span className="flex items-center gap-1.5 whitespace-nowrap">📶 إنترنت مجاني</span>
-          <span className="flex items-center gap-1.5 whitespace-nowrap">🖥️ شاشات عرض</span>
-          <span className="flex items-center gap-1.5 whitespace-nowrap">💳 دفع إلكتروني</span>
-        </div>
       </div>
 
     </div>
