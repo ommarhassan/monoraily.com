@@ -36,7 +36,7 @@ export default function StationsPage() {
   const [activeLine, setActiveLine] = useState<'east-nile' | 'west-nile'>('east-nile');
 
   const meta = (lineMeta as Record<string, any>)[activeLine];
-  const filteredStations = stations.filter((st) => hasLine(st, activeLine));
+  const filteredStations = stations.filter((st: any) => hasLine(st, activeLine));
 
   return (
     <div className={`subpage w-full min-h-screen bg-slate-50 text-slate-800 p-4 md:p-6 lg:p-8 font-sans ${isEn ? 'dir-ltr' : 'dir-rtl'}`}>
@@ -111,14 +111,14 @@ export default function StationsPage() {
 
         {/* Stations List Vertical Timeline */}
         <div className="space-y-4">
-          {filteredStations.map((st, idx) => {
-            const transferText = getTransferLabel(st.transfer || st.note, lang);
+          {filteredStations.map((stItem: any, idx: number) => {
+            const transferText = getTransferLabel(stItem.transfer || stItem.note || stItem.connections, lang);
             const isOrigin = idx === 0;
             const isTerminus = idx === filteredStations.length - 1;
 
             return (
               <div
-                key={st.id}
+                key={stItem.id}
                 className="flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 transition group"
               >
                 <div className="flex items-center gap-4">
@@ -133,7 +133,7 @@ export default function StationsPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-black text-slate-900">
-                        {getStationName(st.name, lang)}
+                        {getStationName(stItem.name, lang)}
                       </span>
                       {transferText && (
                         <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
@@ -142,7 +142,7 @@ export default function StationsPage() {
                       )}
                     </div>
                     <div className="text-xs text-slate-400 font-bold mt-0.5">
-                      {getStationName(st.area, lang)}
+                      {getStationName(stItem.area, lang)}
                     </div>
                   </div>
                 </div>
