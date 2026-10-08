@@ -148,8 +148,8 @@ export default function StationsPage() {
                     <div className="network-station" key={name}>
                       <span className={`network-node ${station.connections.length ? 'interchange' : ''}`} />
                       <span className="network-name">{getStationName(name, lang)}</span>
-                      {station.connections.map((c) => (
-                        <span key={typeof c.label === 'string' ? c.label : c.label.ar} className={`interchange-label ${c.status === 'planned' ? 'planned' : ''}`}>
+                      {station.connections.map((c: any, cIdx: number) => (
+                        <span key={cIdx} className={`interchange-label ${c.status === 'planned' ? 'planned' : ''}`}>
                           {c.status === 'active' ? (isAr ? 'تبديل: ' : 'Transfer: ') : ''}
                           {formatLabel(c.label, lang)}
                         </span>
@@ -189,8 +189,8 @@ export default function StationsPage() {
                     <div className="network-station" key={station.name}>
                       <span className={`network-node ${station.connections.length ? 'interchange' : ''}`} />
                       <span className="network-name">{getStationName(station.name, lang)}</span>
-                      {station.connections.map((c) => (
-                        <span key={typeof c === 'string' ? c : c.ar} className="interchange-label planned">
+                      {station.connections.map((c: any, cIdx: number) => (
+                        <span key={cIdx} className="interchange-label planned">
                           {formatLabel(c, lang)}
                         </span>
                       ))}
