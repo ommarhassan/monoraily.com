@@ -46,6 +46,7 @@ const rejectionEn = {
   invalid: 'Invalid or tampered code',
   expired: 'Expired',
   used: 'Already used or no trips left',
+  not_yet: 'Not valid yet. It works on the booked travel day',
 } as const;
 
 /** Arabic messages that scanAtGate can return for connection problems, in English. */
