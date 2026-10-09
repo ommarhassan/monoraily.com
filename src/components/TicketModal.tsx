@@ -11,6 +11,21 @@ import Icon from './Icon';
 import { getStationName } from './StationPicker';
 
 const MAX_PASSENGERS = 7;
+/** Advance booking: how many days ahead a ticket can be bought. Same limit as the server. */
+const MAX_ADVANCE_DAYS = 15;
+
+// Dates are YYYY-MM-DD in Cairo time, the same way the server counts them.
+const cairoDateFmt = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Africa/Cairo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+const todayCairo = () => cairoDateFmt.format(new Date());
+const addDays = (dateStr: string, days: number) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+};
 
 type Props = { route: Route; onClose: () => void; onVerify: () => void };
 
@@ -23,13 +38,15 @@ async function errorCode(error: unknown): Promise<string | null> {
 }
 
 const errorMessagesAr: Record<string, string> = {
-  half_requires_verification: 'نصف التذكرة محتاج توثيق ساري لحسابك.',
+  half_requires_verification: 'نصف التذكرة محتاج توثيق ساري لحسابك لحد يوم السفر.',
   half_single_passenger: 'نصف التذكرة لراكب واحد بس.',
+  invalid_date: 'التاريخ لازم يكون من النهارده لحد ١٥ يوم قدام.',
 };
 
 const errorMessagesEn: Record<string, string> = {
-  half_requires_verification: 'Half fare requires active account verification.',
+  half_requires_verification: 'Half fare requires account verification that is still valid on the travel day.',
   half_single_passenger: 'Half fare is for one passenger only.',
+  invalid_date: 'The date must be between today and 15 days ahead.',
 };
 
 export default function TicketModal({ route, onClose, onVerify }: Props) {
@@ -39,6 +56,9 @@ export default function TicketModal({ route, onClose, onVerify }: Props) {
   const [name, setName] = useState(profile?.full_name ?? '');
   const [kind, setKind] = useState<TicketKind>('full');
   const [passengers, setPassengers] = useState(1);
+  const today = todayCairo();
+  const maxDate = addDays(today, MAX_ADVANCE_DAYS);
+  const [date, setDate] = useState(today);
   const [busy, setBusy] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [verification, setVerification] = useState<MyVerification | null>(null);
@@ -51,6 +71,9 @@ export default function TicketModal({ route, onClose, onVerify }: Props) {
   const toName = getStationName(rawTo, lang);
   const halfAllowed = Boolean(verification?.category);
   const blockedHalf = kind === 'half' && !halfAllowed;
+  // The date input can be typed by hand, so check the range here too (the server checks it again).
+  const dateOk = /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= today && date <= maxDate;
+  const isAdvance = dateOk && date > today;
 
   useEffect(() => {
     const closeOnEscape = (e: KeyboardEvent) => {
@@ -80,7 +103,15 @@ export default function TicketModal({ route, onClose, onVerify }: Props) {
       }
       if (!supabase) throw new Error('Supabase not connected');
       const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: { name: name.trim(), from: rawFrom, to: rawTo, kind, passengers },
+        body: {
+          name: name.trim(),
+          from: rawFrom,
+          to: rawTo,
+          kind,
+          passengers,
+          // Only send a date for a real advance booking; "today" keeps the normal behaviour.
+          ...(isAdvance ? { date } : {}),
+        },
       });
       if (error || !data?.checkout_url) {
         const code = await errorCode(error);
@@ -183,6 +214,34 @@ export default function TicketModal({ route, onClose, onVerify }: Props) {
             </>
           ))}
 
+        <label className="name-label" htmlFor="travel-date">
+          {isAr ? 'تاريخ السفر' : 'Travel Date'}
+        </label>
+        <input
+          id="travel-date"
+          className="name-input"
+          type="date"
+          dir="ltr"
+          min={today}
+          max={maxDate}
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          disabled={busy}
+        />
+        <p className="modal-copy kind-note">
+          {!dateOk
+            ? isAr
+              ? 'اختار تاريخ من النهارده لحد ١٥ يوم قدام.'
+              : 'Pick a date from today up to 15 days ahead.'
+            : isAdvance
+              ? isAr
+                ? 'التذكرة بتشتغل في اليوم ده بس، من أوله لآخره.'
+                : 'The ticket works on that day only, from start to end.'
+              : isAr
+                ? 'التذكرة بتشتغل من وقت الدفع لمدة ساعتين.'
+                : 'The ticket works for two hours from payment.'}
+        </p>
+
         <div className="modal-price">
           <span>{isAr ? 'عدد الركاب' : 'Passengers'}</span>
           <span>
@@ -236,7 +295,7 @@ export default function TicketModal({ route, onClose, onVerify }: Props) {
 
         <button
           className="dark-button full modal-action"
-          disabled={!name.trim() || busy || blockedHalf}
+          disabled={!name.trim() || busy || blockedHalf || !dateOk}
           onClick={submit}
         >
           {busy ? (
