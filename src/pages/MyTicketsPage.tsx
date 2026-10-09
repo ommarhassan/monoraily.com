@@ -30,6 +30,8 @@ type SavedTicket = {
   kind: 'full' | 'half';
   status: Status | string;
   expiresAt: string;
+  /** Advance booking: the ticket only starts working at this moment. */
+  validFrom?: string;
   payload: string;
 };
 
@@ -63,9 +65,14 @@ const subState = (s: SavedSubscription): Status =>
 const ticketState = (tk: SavedTicket): Status =>
   tk.status === 'used' ? 'used' : tk.status === 'valid' ? 'valid' : 'expired';
 
-/** Usable ones first, finished ones after. */
-const usableFirst = <T,>(items: T[], state: (item: T) => Status) =>
-  [...items].sort((a, b) => Number(state(b) === 'valid') - Number(state(a) === 'valid'));
+/** Bought ahead, valid, but its day has not started yet. */
+const isUpcomingTicket = (tk: SavedTicket) =>
+  ticketState(tk) === 'valid' && !!tk.validFrom && new Date(tk.validFrom).getTime() > Date.now();
+
+/** Order: usable now, then upcoming, then finished. */
+const ticketRank = (tk: SavedTicket) => (isUpcomingTicket(tk) ? 1 : ticketState(tk) === 'valid' ? 0 : 2);
+const subRank = (s: SavedSubscription) => (subState(s) === 'valid' ? 0 : 2);
+const sortBy = <T,>(items: T[], rank: (item: T) => number) => [...items].sort((a, b) => rank(a) - rank(b));
 
 export default function MyTicketsPage({ onPlan, justPaid }: Props) {
   const { user } = useAuth();
@@ -116,6 +123,7 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
           kind: tk.kind,
           status: ticketStatus(tk),
           expiresAt: new Date(tk.exp).toISOString(),
+          validFrom: tk.validFrom ? new Date(tk.validFrom).toISOString() : undefined,
           payload: tk.token,
         })),
       );
@@ -171,12 +179,15 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
     return `${getStationName(from, lang)} ← ${getStationName(to, lang)}`;
   };
 
-  const ticketTag = (status: Status) =>
-    status === 'valid'
+  const ticketTag = (tk: SavedTicket) => {
+    if (isUpcomingTicket(tk)) return isAr ? 'قادمة' : 'Upcoming';
+    const status = ticketState(tk);
+    return status === 'valid'
       ? isAr ? 'صالحة' : 'Valid'
       : status === 'used'
         ? isAr ? 'مستخدمة' : 'Used'
         : isAr ? 'منتهية' : 'Expired';
+  };
 
   const subTag = (status: Status) =>
     status === 'valid'
@@ -205,6 +216,13 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
             <>
               <h3>{t('tickets.ticketReady')}</h3>
               <p>{t('tickets.ticketInfo', { route: translateRoute(justPaidTicket.route), id: justPaidTicket.id })}</p>
+              {isUpcomingTicket(justPaidTicket) && justPaidTicket.validFrom && (
+                <p>
+                  {isAr
+                    ? `تشتغل يوم ${formatDate(justPaidTicket.validFrom, locale)}.`
+                    : `Valid on ${formatDate(justPaidTicket.validFrom, locale)}.`}
+                </p>
+              )}
             </>
           )}
           {justPaidSub && (
@@ -234,7 +252,7 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
         <>
           <h2 className="wallet-section-title">{t('tickets.subsHeading')}</h2>
           <div className="wallet-grid">
-            {usableFirst(subs, subState).map((s) => {
+            {sortBy(subs, subRank).map((s) => {
               const status = subState(s);
               const pName = planNames[s.plan]?.[lang] || s.plan;
               const zName = zoneNames[s.zone]?.[lang] || s.zone;
@@ -270,19 +288,27 @@ export default function MyTicketsPage({ onPlan, justPaid }: Props) {
         <>
           <h2 className="wallet-section-title">{t('tickets.ticketsHeading')}</h2>
           <div className="wallet-grid">
-            {usableFirst(tickets, ticketState).map((tk) => {
+            {sortBy(tickets, ticketRank).map((tk) => {
               const status = ticketState(tk);
+              const upcoming = isUpcomingTicket(tk);
               const kindLabel =
                 tk.kind === 'half' ? (isAr ? 'نصف تذكرة' : 'Half ticket') : (isAr ? 'تذكرة كاملة' : 'Full ticket');
               return (
                 <article className={`wallet-card ${status}`} key={tk.id}>
                   {qrs[tk.id] && <img className="qr-img small" src={qrs[tk.id]} alt={tk.id} />}
                   <div>
-                    <span className={`status-pill ${status}`}>{ticketTag(status)}</span>
+                    <span className={`status-pill ${status}`}>{ticketTag(tk)}</span>
                     <h3>{translateRoute(tk.route)}</h3>
                     <p>
                       {kindLabel} · {num(tk.fare, locale)} {t('common.egp')}
                     </p>
+                    {upcoming && tk.validFrom && (
+                      <p>
+                        {isAr
+                          ? `تشتغل يوم ${formatDate(tk.validFrom, locale)}`
+                          : `Valid on ${formatDate(tk.validFrom, locale)}`}
+                      </p>
+                    )}
                     <small>
                       {tk.id} · {expiresText(tk.expiresAt, 'تنتهي')}
                     </small>
