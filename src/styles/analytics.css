@@ -1,0 +1,271 @@
+/* Analytics panel (admin). Uses the site's CSS variables when they exist. */
+.an-wrap {
+  margin: 28px 0 36px;
+  min-width: 0;
+}
+.an-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.an-head h2 {
+  margin: 4px 0 0;
+  font-size: 24px;
+}
+.an-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.an-seg {
+  display: inline-flex;
+  border: 1px solid var(--line, #dfe3f1);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card, #fff);
+}
+.an-seg button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.an-seg button.active {
+  background: var(--brand, #2430a0);
+  color: #fff;
+}
+.an-refresh {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #dfe3f1);
+  background: var(--card, #fff);
+  color: var(--brand, #2430a0);
+  font-size: 18px;
+  cursor: pointer;
+}
+.an-live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  opacity: 0.75;
+  margin-bottom: 14px;
+}
+.an-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #1c8a55;
+  flex: none;
+  animation: an-pulse 1.8s ease-in-out infinite;
+}
+@keyframes an-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* KPI cards */
+.an-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.an-kpi {
+  background: var(--card, #fff);
+  border: 1px solid var(--line, #dfe3f1);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.an-kpi small {
+  opacity: 0.7;
+}
+.an-kpi strong {
+  font-size: 22px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.an-delta {
+  font-size: 13px;
+  font-weight: 700;
+}
+.an-delta.up {
+  color: #1c8a55;
+}
+.an-delta.down {
+  color: #d23b3b;
+}
+.an-delta.flat {
+  opacity: 0.55;
+}
+
+/* Cards and grids */
+.an-grid-2,
+.an-grid-3 {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.an-grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+}
+.an-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+.an-card {
+  background: var(--card, #fff);
+  border: 1px solid var(--line, #dfe3f1);
+  border-radius: 18px;
+  padding: 18px 18px 14px;
+  min-width: 0;
+}
+.an-card h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+.an-note {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+.an-empty {
+  opacity: 0.7;
+  padding: 10px 0;
+}
+
+/* Charts (always left-to-right in time) */
+.an-chart {
+  direction: ltr;
+}
+.an-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.an-grid {
+  stroke: var(--line, #dfe3f1);
+  stroke-width: 1;
+}
+.an-axis {
+  font-size: 11px;
+  fill: currentColor;
+  opacity: 0.65;
+}
+.an-bar {
+  fill: var(--brand, #2430a0);
+}
+.an-bar.peak {
+  fill: var(--accent, #f6d800);
+  stroke: var(--brand, #2430a0);
+  stroke-width: 1;
+}
+
+/* Ranked lists */
+.an-rank {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.an-rank-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 15px;
+}
+.an-rank-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.an-rank-track {
+  height: 8px;
+  border-radius: 99px;
+  background: var(--brand-soft, #e8ebfb);
+  margin-top: 5px;
+  overflow: hidden;
+}
+.an-rank-track span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--brand, #2430a0);
+}
+.an-rank small {
+  opacity: 0.65;
+}
+
+/* Payment funnel */
+.an-funnel {
+  display: flex;
+  height: 16px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--brand-soft, #e8ebfb);
+  margin: 6px 0 14px;
+}
+.an-funnel span {
+  flex-basis: 0;
+}
+.an-funnel .paid,
+.an-legend i.paid {
+  background: #1c8a55;
+}
+.an-funnel .pending,
+.an-legend i.pending {
+  background: var(--accent, #f6d800);
+}
+.an-funnel .failed,
+.an-legend i.failed {
+  background: #d23b3b;
+}
+.an-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.an-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.an-legend li strong {
+  margin-inline-start: auto;
+}
+.an-legend li.total {
+  border-top: 1px solid var(--line, #dfe3f1);
+  padding-top: 8px;
+}
+.an-legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  flex: none;
+}
+
+@media (max-width: 480px) {
+  .an-head h2 {
+    font-size: 20px;
+  }
+  .an-kpi strong {
+    font-size: 19px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .an-dot {
+    animation: none;
+  }
+}
