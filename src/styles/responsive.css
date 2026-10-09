@@ -1,3 +1,20 @@
+/* Responsive fix: grid/flex children are allowed to shrink below their content width.
+   Without this a wide table (or long text) stretches the whole page on small screens. */
+.main-content,
+.subpage,
+.dashboard,
+.network-layout > *,
+.network-card,
+.result-card,
+.planner-card {
+  min-width: 0;
+}
+
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 /* Responsive breakpoints */
 
 @media (max-width: 1180px) {
@@ -65,22 +82,22 @@
 
 @media (max-width: 950px) {
   .planner-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .fare-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .quick-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .quick-card.static {
     display: none;
   }
   .stat-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .network-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -124,13 +141,13 @@
     font-size: 30px;
   }
   .network-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .network-aside {
     position: static;
   }
   .quick-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .section-helper {
     display: none;
@@ -179,7 +196,7 @@
     display: none;
   }
   .quick-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .quick-card.static {
     display: flex;
