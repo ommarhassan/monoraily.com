@@ -4,6 +4,7 @@ import { getStationName } from '../components/StationPicker';
 import { useLanguage } from '../i18n/LanguageContext';
 import { adminData, type DbProfile, type DbSubscription, type DbTicket } from '../lib/db';
 import { formatDateTime, num } from '../lib/format';
+import AnalyticsPanel from '../components/AnalyticsPanel';
 import { planLabel, zoneLabel } from '../lib/ticketing';
 import {
   categoryLabels,
