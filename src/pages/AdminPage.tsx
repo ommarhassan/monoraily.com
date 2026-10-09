@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
+import AnalyticsPanel from '../components/AnalyticsPanel';
 import Stat from '../components/Stat';
 import { getStationName } from '../components/StationPicker';
 import { useLanguage } from '../i18n/LanguageContext';
 import { adminData, type DbProfile, type DbSubscription, type DbTicket } from '../lib/db';
 import { formatDateTime, num } from '../lib/format';
-import AnalyticsPanel from '../components/AnalyticsPanel';
 import { planLabel, zoneLabel } from '../lib/ticketing';
 import {
   categoryLabels,
@@ -60,7 +60,7 @@ export default function AdminPage() {
     );
   }
 
-  const ticketRevenue = data.tickets.reduce((sum, t) => sum + t.fare, 0);
+  const ticketRevenue = data.tickets.reduce((sum, tk) => sum + tk.fare, 0);
   const subscriptionRevenue = data.subscriptions.reduce((sum, s) => sum + s.fare, 0);
   const revenue = ticketRevenue + subscriptionRevenue;
   const now = Date.now();
@@ -68,7 +68,7 @@ export default function AdminPage() {
     (s) => new Date(s.expires_at).getTime() > now && s.trips_used < s.trips_total,
   ).length;
 
-  const topStationName = mostCommon(data.tickets.map((t) => t.to_station));
+  const topStationName = mostCommon(data.tickets.map((tk) => tk.to_station));
   const displayTopStation = topStationName ? getStationName(topStationName, lang) : '—';
 
   return (
@@ -86,6 +86,8 @@ export default function AdminPage() {
         <Stat label={t('admin.statRevenue')} value={num(revenue, locale)} unit={t('common.egp')} />
         <Stat label={t('admin.statTopStation')} value={displayTopStation} />
       </div>
+
+      <AnalyticsPanel />
 
       <div className="network-card">
         <h3>{t('admin.requests', { n: num(requests.length, locale) })}</h3>
