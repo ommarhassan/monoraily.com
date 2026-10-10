@@ -1,0 +1,139 @@
+/* Support / complaints page. Uses the site's variables when they exist. */
+.sp-textarea {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  font: inherit;
+  line-height: 1.7;
+}
+.sp-hint {
+  margin: 4px 0 0;
+  font-size: 13px;
+  opacity: 0.7;
+}
+.sp-counter {
+  text-align: end;
+  font-size: 12px;
+  opacity: 0.6;
+  margin-top: 2px;
+}
+.sp-error {
+  color: #d23b3b;
+  margin: 10px 0 0;
+}
+.sp-field {
+  margin-bottom: 4px;
+}
+
+/* success box with the reference number */
+.sp-done {
+  border: 1px solid var(--line, #dfe3f1);
+  border-inline-start: 6px solid #1c8a55;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  background: var(--card, #fff);
+}
+.sp-done h3 {
+  margin: 0 0 6px;
+}
+.sp-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+  direction: ltr;
+}
+.sp-ref code {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  background: var(--brand-soft, #e8ebfb);
+  color: var(--brand, #2430a0);
+  padding: 4px 12px;
+  border-radius: 10px;
+}
+
+/* my messages */
+.sp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.sp-item {
+  border: 1px solid var(--line, #dfe3f1);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: var(--card, #fff);
+  min-width: 0;
+}
+.sp-item-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.sp-item-top .sp-ref-small {
+  direction: ltr;
+  font-weight: 700;
+  font-size: 13px;
+  opacity: 0.8;
+}
+.sp-item h4 {
+  margin: 2px 0;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.sp-item small {
+  opacity: 0.65;
+}
+.sp-item details {
+  margin-top: 6px;
+}
+.sp-item summary {
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--brand, #2430a0);
+}
+.sp-msg {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 8px 0 0;
+  line-height: 1.8;
+}
+.sp-reply {
+  margin-top: 10px;
+  border-inline-start: 4px solid var(--accent, #f6d800);
+  background: var(--brand-soft, #e8ebfb);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.sp-reply b {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+/* status pills */
+.sp-pill {
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 10px;
+}
+.sp-pill.new {
+  background: #fff3c4;
+  color: #6b5600;
+}
+.sp-pill.in_progress {
+  background: #dde4ff;
+  color: #2430a0;
+}
+.sp-pill.resolved {
+  background: #d6f3e4;
+  color: #12633b;
+}
