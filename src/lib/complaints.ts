@@ -81,10 +81,12 @@ export async function updateComplaint(
   patch: { status?: ComplaintStatus; admin_reply?: string | null },
 ): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: 'Supabase not configured' };
-  const { error } = await supabase.from('complaints').update(patch).eq('id', id);
+  const { data, error } = await supabase.from('complaints').update(patch).eq('id', id).select('id');
   if (error) {
     console.error('updateComplaint failed:', error.message, error);
     return { ok: false, error: error.message };
   }
+  // Row level security does not raise an error when it blocks a row: it just updates nothing.
+  if (!data || data.length === 0) return { ok: false, error: 'not_allowed' };
   return { ok: true };
 }
