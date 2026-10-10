@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import AnalyticsPanel from '../components/AnalyticsPanel';
+import ComplaintsInbox from '../components/ComplaintsInbox';
 import Stat from '../components/Stat';
 import { getStationName } from '../components/StationPicker';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -86,6 +87,8 @@ export default function AdminPage() {
         <Stat label={t('admin.statRevenue')} value={num(revenue, locale)} unit={t('common.egp')} />
         <Stat label={t('admin.statTopStation')} value={displayTopStation} />
       </div>
+
+      <ComplaintsInbox />
 
       <AnalyticsPanel />
 
