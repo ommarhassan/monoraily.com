@@ -41,6 +41,9 @@ function GlobeIcon() {
 export default function Topbar({ page, now, menuOpen, onToggleMenu, onGo, onLogin, onRegister, onSignOut }: Props) {
   const { user, profile, isAdmin } = useAuth();
   const { lang, dir, locale, t, toggleLang } = useLanguage();
+  const isAr = lang === 'ar';
+  /** Account menu labels are written here, so they never show a raw key like "signOut". */
+  const tx = (ar: string, en: string) => (isAr ? ar : en);
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
 
@@ -96,14 +99,17 @@ export default function Topbar({ page, now, menuOpen, onToggleMenu, onGo, onLogi
                 {accountOpen && (
                   <div className="account-dropdown" role="menu">
                     <button role="menuitem" onClick={() => go('dashboard')}>
-                      {t('dashboard')}
+                      {tx('لوحتي', 'My dashboard')}
+                    </button>
+                    <button role="menuitem" onClick={() => go('support')}>
+                      {tx('الدعم والشكاوي', 'Support & complaints')}
                     </button>
                     <button role="menuitem" onClick={() => go('verification')}>
-                      {t('verification')}
+                      {tx('توثيق الفئة', 'Category verification')}
                     </button>
                     {isAdmin && (
                       <button role="menuitem" onClick={() => go('admin')}>
-                        {t('admin')}
+                        {tx('لوحة الأدمن', 'Admin dashboard')}
                       </button>
                     )}
                     <button
@@ -114,7 +120,7 @@ export default function Topbar({ page, now, menuOpen, onToggleMenu, onGo, onLogi
                         onSignOut();
                       }}
                     >
-                      {t('signOut')}
+                      {tx('تسجيل الخروج', 'Sign out')}
                     </button>
                   </div>
                 )}
