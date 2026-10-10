@@ -1,0 +1,128 @@
+/* Admin complaints inbox. Reuses the segmented buttons from analytics.css (.an-seg) and the pills from support.css. */
+.ci-wrap {
+  margin: 28px 0;
+  min-width: 0;
+}
+.ci-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.ci-head h2 {
+  margin: 4px 0 0;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ci-badge {
+  background: #d23b3b;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 0 10px;
+}
+.ci-empty {
+  opacity: 0.7;
+}
+.ci-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+.ci-item {
+  background: var(--card, #fff);
+  border: 1px solid var(--line, #dfe3f1);
+  border-inline-start: 6px solid var(--line, #dfe3f1);
+  border-radius: 16px;
+  padding: 14px 16px;
+  min-width: 0;
+}
+.ci-item.new {
+  border-inline-start-color: #d9b400;
+}
+.ci-item.in_progress {
+  border-inline-start-color: var(--brand, #2430a0);
+}
+.ci-item.resolved {
+  border-inline-start-color: #1c8a55;
+}
+.ci-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+.ci-ref {
+  direction: ltr;
+}
+.ci-date {
+  margin-inline-start: auto;
+  opacity: 0.65;
+}
+.ci-item h4 {
+  margin: 8px 0 6px;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+.ci-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 8px 16px;
+  margin: 0 0 8px;
+}
+.ci-meta dt {
+  font-size: 12px;
+  opacity: 0.65;
+}
+.ci-meta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.ci-meta code {
+  font-size: 12px;
+}
+.ci-reply {
+  margin-top: 12px;
+  border-top: 1px solid var(--line, #dfe3f1);
+  padding-top: 10px;
+}
+.ci-reply label {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.ci-reply .sp-textarea {
+  min-height: 90px;
+}
+.ci-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.ci-actions select {
+  width: auto;
+  min-width: 150px;
+}
+.ci-saved {
+  color: #1c8a55;
+  font-weight: 700;
+}
+@media (max-width: 480px) {
+  .ci-head h2 {
+    font-size: 20px;
+  }
+  .ci-date {
+    margin-inline-start: 0;
+  }
+}
