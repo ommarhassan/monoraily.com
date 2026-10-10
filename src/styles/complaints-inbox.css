@@ -126,3 +126,17 @@
     margin-inline-start: 0;
   }
 }
+
+.ci-own-tag {
+  background: var(--accent, #f6d800);
+  color: #14183a;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 0 10px;
+}
+.ci-own-note {
+  margin: 0 0 6px;
+  font-size: 14px;
+  opacity: 0.8;
+}
