@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { allComplaints, updateComplaint, type Complaint, type ComplaintStatus } from '../lib/complaints';
 import { formatDateTime, num } from '../lib/format';
@@ -27,6 +28,7 @@ type Filter = 'all' | ComplaintStatus;
 
 /** Admin inbox: read every message, reply, and move it through new / in progress / resolved. */
 export default function ComplaintsInbox() {
+  const { user } = useAuth();
   const { lang, locale } = useLanguage();
   const isAr = lang === 'ar';
   const tx = (ar: string, en: string) => (isAr ? ar : en);
@@ -76,7 +78,11 @@ export default function ComplaintsInbox() {
     });
     setSavingId(null);
     if (!result.ok) {
-      setError(tx('مقدرناش نحفظ التعديل. جرّب تاني.', 'Could not save the change. Please try again.'));
+      setError(
+        result.error === 'not_allowed'
+          ? tx('مينفعش تردّ على شكوى انت اللي كاتبها. لازم أدمن تاني يتعامل معاها.', 'You cannot handle a complaint you sent yourself. Another admin has to.')
+          : tx('مقدرناش نحفظ التعديل. جرّب تاني.', 'Could not save the change. Please try again.'),
+      );
       return;
     }
     setSavedId(c.id);
@@ -120,6 +126,7 @@ export default function ComplaintsInbox() {
         <ul className="ci-list">
           {visible.map((c) => {
             const draft = drafts[c.id] ?? { status: c.status, reply: c.admin_reply ?? '' };
+            const own = c.user_id === user?.id;
             const changed = draft.status !== c.status || draft.reply.trim() !== (c.admin_reply ?? '');
             return (
               <li className={`ci-item ${c.status}`} key={c.id}>
@@ -127,6 +134,7 @@ export default function ComplaintsInbox() {
                   <span className={`sp-pill ${c.status}`}>{STATUSES.find((s) => s.id === c.status)?.[lang]}</span>
                   <strong className="ci-ref">{c.ref}</strong>
                   <span className="ci-cat">{CATEGORY_NAMES[c.category]?.[lang] ?? c.category}</span>
+                  {own && <span className="ci-own-tag">{tx('شكواك', 'Your own')}</span>}
                   <span className="ci-date">{formatDateTime(c.created_at, locale)}</span>
                 </div>
 
@@ -161,36 +169,48 @@ export default function ComplaintsInbox() {
 
                 <p className="sp-msg">{c.message}</p>
 
-                <div className="ci-reply">
-                  <label htmlFor={`reply-${c.id}`}>{tx('رد الإدارة (بيظهر للمستخدم)', 'Reply (the user will see it)')}</label>
-                  <textarea
-                    id={`reply-${c.id}`}
-                    className="name-input sp-textarea"
-                    value={draft.reply}
-                    maxLength={MAX_REPLY}
-                    onChange={(e) => setDraft(c.id, { reply: e.target.value })}
-                    disabled={savingId === c.id}
-                  />
-                  <div className="ci-actions">
-                    <select
-                      className="name-input"
-                      value={draft.status}
-                      onChange={(e) => setDraft(c.id, { status: e.target.value as ComplaintStatus })}
-                      disabled={savingId === c.id}
-                      aria-label={tx('الحالة', 'Status')}
-                    >
-                      {STATUSES.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s[lang]}
-                        </option>
-                      ))}
-                    </select>
-                    <button className="dark-button" disabled={!changed || savingId === c.id} onClick={() => save(c)}>
-                      {savingId === c.id ? tx('بنحفظ…', 'Saving…') : tx('حفظ', 'Save')}
-                    </button>
-                    {savedId === c.id && <span className="ci-saved">{tx('اتحفظ ✓', 'Saved ✓')}</span>}
+                {own ? (
+                  <div className="ci-reply">
+                    <p className="ci-own-note">
+                      {tx(
+                        'دي شكوى انت اللي كاتبها، فمينفعش تردّ عليها أو تغيّر حالتها. لازم أدمن تاني يتعامل معاها، وتتابعها من «رسايلي».',
+                        'You sent this complaint, so you cannot reply to it or change its status. Another admin has to handle it. Follow it from “My messages”.',
+                      )}
+                    </p>
+                    {c.admin_reply && <p className="sp-msg">{c.admin_reply}</p>}
                   </div>
-                </div>
+                ) : (
+                  <div className="ci-reply">
+                    <label htmlFor={`reply-${c.id}`}>{tx('رد الإدارة (بيظهر للمستخدم)', 'Reply (the user will see it)')}</label>
+                    <textarea
+                      id={`reply-${c.id}`}
+                      className="name-input sp-textarea"
+                      value={draft.reply}
+                      maxLength={MAX_REPLY}
+                      onChange={(e) => setDraft(c.id, { reply: e.target.value })}
+                      disabled={savingId === c.id}
+                    />
+                    <div className="ci-actions">
+                      <select
+                        className="name-input"
+                        value={draft.status}
+                        onChange={(e) => setDraft(c.id, { status: e.target.value as ComplaintStatus })}
+                        disabled={savingId === c.id}
+                        aria-label={tx('الحالة', 'Status')}
+                      >
+                        {STATUSES.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s[lang]}
+                          </option>
+                        ))}
+                      </select>
+                      <button className="dark-button" disabled={!changed || savingId === c.id} onClick={() => save(c)}>
+                        {savingId === c.id ? tx('بنحفظ…', 'Saving…') : tx('حفظ', 'Save')}
+                      </button>
+                      {savedId === c.id && <span className="ci-saved">{tx('اتحفظ ✓', 'Saved ✓')}</span>}
+                    </div>
+                  </div>
+                )}
               </li>
             );
           })}
