@@ -15,15 +15,16 @@ import HomePage from './pages/HomePage';
 import MapPage from './pages/MapPage';
 import MyTicketsPage from './pages/MyTicketsPage';
 import StationsPage from './pages/StationsPage';
+import SupportPage from './pages/SupportPage';
 import VerificationPage from './pages/VerificationPage';
 import VerifyScreen from './pages/VerifyScreen';
 
 const CLOCK_TICK_MS = 30_000;
-const validPages: Page[] = ['home', 'map', 'stations', 'fares', 'mytickets', 'gate', 'dashboard', 'verification', 'admin', 'auth'];
-const translatedPages: Page[] = ['home', 'map', 'stations', 'fares', 'mytickets', 'gate', 'dashboard', 'verification', 'admin', 'auth'];
+const validPages: Page[] = ['home', 'map', 'stations', 'fares', 'mytickets', 'gate', 'dashboard', 'verification', 'admin', 'auth', 'support'];
+const translatedPages: Page[] = ['home', 'map', 'stations', 'fares', 'mytickets', 'gate', 'dashboard', 'verification', 'admin', 'auth', 'support'];
 
 /** Private / data pages: the news ticker is not shown on them. */
-const pagesWithoutTicker: Page[] = ['dashboard', 'verification', 'admin'];
+const pagesWithoutTicker: Page[] = ['dashboard', 'verification', 'admin', 'support'];
 
 function getInitialPage(): Page {
   try {
@@ -154,6 +155,8 @@ function Shell() {
         return <DashboardPage onPlan={() => go('home')} />;
       case 'verification':
         return <VerificationPage />;
+      case 'support':
+        return <SupportPage />;
       case 'admin':
         return isAdmin ? (
           <AdminPage />
