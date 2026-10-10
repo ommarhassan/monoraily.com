@@ -12,10 +12,10 @@ export const nav = [
 ] as const satisfies readonly { id: string; label: string; labelKey: Key; icon: IconName }[];
 
 export type NavId = (typeof nav)[number]['id'];
-export type Page = NavId | 'dashboard' | 'admin' | 'auth' | 'verification';
+export type Page = NavId | 'dashboard' | 'admin' | 'auth' | 'verification' | 'support';
 
 /** Pages that need a signed-in user. */
-export const protectedPages: Page[] = ['mytickets', 'dashboard', 'admin', 'verification'];
+export const protectedPages: Page[] = ['mytickets', 'dashboard', 'admin', 'verification', 'support'];
 
 /** Arabic titles, kept for code that still reads them directly. */
 export const extraPageTitles: Partial<Record<Page, string>> = {
@@ -23,6 +23,7 @@ export const extraPageTitles: Partial<Record<Page, string>> = {
   admin: 'لوحة الأدمن',
   auth: 'الحساب',
   verification: 'توثيق الفئة',
+  support: 'الدعم والشكاوي',
 };
 
 const extraPageTitleKeys: Partial<Record<Page, Key>> = {
@@ -35,5 +36,5 @@ const extraPageTitleKeys: Partial<Record<Page, Key>> = {
 /** Title in the current language. In sidebars/menus use `t(item.labelKey)` directly. */
 export const pageTitle = (page: Page) => {
   const key = nav.find((item) => item.id === page)?.labelKey ?? extraPageTitleKeys[page];
-  return key ? translate(key) : '';
+  return key ? translate(key) : (extraPageTitles[page] ?? '');
 };
